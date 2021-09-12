@@ -1,0 +1,8 @@
+{% load get_qrcode_path %}
+
+{% for item in allItems %}
+    <table>
+        {% include "voleybotapp/itemtablerow.html" with itemName=item.name itemDescription=item.description itemPrice=item.price itemScanCode=item|get_qrcode_path itemActive=item.isActive itemID=item.id %}
+    </table>
+    <hr>
+{% endfor %}

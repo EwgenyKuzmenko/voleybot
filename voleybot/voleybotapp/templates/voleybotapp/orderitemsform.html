@@ -1,0 +1,7 @@
+<ul>
+    {% for item in orderItems.all %}
+        <li>
+            {{item.item.name}}
+        </li>
+    {% endfor %}
+</ul>

@@ -1,0 +1,19 @@
+<html>
+    <head></head>
+    <body>
+        {% include "voleybotapp/topmenu.html" %}
+        <form method="get" action="{% url 'items/new/made' %}" enctype="multipart/form-data">
+            {% include "voleybotapp/itemnewnameform.html" %}
+            <p>
+            {% include "voleybotapp/itemnewgroupform.html" %}
+            <p>
+            {% include "voleybotapp/itemnewdescriptionform.html" %}
+            <p>
+            {% include "voleybotapp/itemnewpriceform.html" %}
+            <p>
+            {% include "voleybotapp/itemnewactiveform.html" %}
+            <p>
+            {% include "voleybotapp/itemnesavebutton.html" %}
+        </form>
+    </body>
+</html>
