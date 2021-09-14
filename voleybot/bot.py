@@ -13,9 +13,9 @@ from voleybotapp.models import *
 def getUser(message):
 
     userID = message.from_user.id
-    userObject = User.objects.get(userID=userID)
+    userObject = User.objects.filter(userID=userID)
 
-    return userObject
+    return userObject[0]
 
 def getItems(params):
     
@@ -50,8 +50,6 @@ def showMenu(message):
 def addItemToCart(message, mode="button", itemData=None):
 
     user = getUser(message)
-
-    print(message.data)
 
     if mode=="qr": item=itemData[0]
     elif mode =="button": item=getItems(message.data.split("NULL"))[0]
@@ -153,7 +151,6 @@ def cancelOrder(message):
         voleybot.send_message(message[0], f"Замовлення #{str(message[1])} скасовано.")
 
 def readyOrder(message):
-    print(message)
     voleybot.send_message(message[0], f"Замовлення #{str(message[1])} готове!")
 
 @voleybot.callback_query_handler(func=lambda message: message.data.startswith("repeat order"))

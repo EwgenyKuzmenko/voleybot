@@ -1,4 +1,5 @@
 from django.db.models.base import Model
+from django.db.models.fields import related
 from django.utils.timezone import now
 
 import qrcode
@@ -21,15 +22,23 @@ class User(models.Model):
     @classmethod
     def authorization(cls, fromUser, bot):
         
-        try: user = User.objects.get(userID=fromUser.id)
-        except ObjectDoesNotExist: user = User.registration(fromUser)
-        
+        try: 
+            user = User.objects.filter(userID=fromUser.id)[0]
+            if user.itemCart is None: 
+                newitemCart = itemCart(relatedTo=user)
+                newitemCart.save()
+                user.itemCart = newitemCart
+                user.save()
+        except: user = User.registration(fromUser)
+
         user.greeting(bot)
 
     @classmethod
     def registration(cls, fromUser):
         
-        newUser = User(userID=fromUser.id, name=fromUser.first_name+" "+fromUser.last_name)
+        print('here2')
+
+        newUser = User(userID=fromUser.id, name=fromUser.first_name)
         newUser.save()
 
         newUserItemCart = itemCart(relatedTo=newUser)
@@ -65,6 +74,7 @@ class User(models.Model):
         m.show(self.userID, bot)
 
     def seeCart(self, bot):
+        print(self)
         self.itemCart.show(self.userID, bot)
 
     def addItemToCart(self, item):
@@ -254,6 +264,8 @@ class Menu(models.Model):
         
         tmp = {}
 
+        print(Item.objects.all())
+
         for item in Item.objects.all():
             if not item.group in tmp.keys(): tmp[item.group] = []
             tmp[item.group].append(item)
@@ -266,6 +278,8 @@ class Menu(models.Model):
     def show(self, userID, bot):
         
         self.update()
+
+        print(self.groups_dict)
 
         for key in self.groups_dict.keys():
 
