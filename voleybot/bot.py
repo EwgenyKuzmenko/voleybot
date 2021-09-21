@@ -1,37 +1,83 @@
+from voleybot.voleybotapp.models import User
 import django
 import telebot
 import os
 
-TOKEN = "1985672373:AAEGmI-gq9wqy1757HkWPt0b36gHQ9MBN5c"
-
-os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
-django.setup()
-voleybot = telebot.TeleBot(TOKEN)
-
-from voleybotapp.models import *
-
-def getUser(message):
-
-    userID = message.from_user.id
-    userObject = User.objects.filter(userID=userID)
-
-    return userObject[0]
-
-def getItems(params):
+class Keyboard(telebot.types.InlineKeyboardMarkup):
     
-    if params[0] in ("add to cart", "+", "-", "x"): params.pop(0)
+    MAIN_PAGE = telebot.types.InlineKeyboardButton(text="На головну", callback_data="load main page")
+    MENU = telebot.types.InlineKeyboardButton(text="Меню", callback_data="load menu")
+    CART = telebot.types.InlineKeyboardButton(text="Ваша корзина", callback_data="load cart")
+    ORDERS = telebot.types.InlineKeyboardButton(text="Ваші замовлення", callback_data="load orders")
+    QR_CODE = telebot.types.InlineKeyboardButton(text="QR-код", callback_data="qr_code")
 
-    try:
-        return Item.objects.all().filter(name=params[0], group=params[1], price=params[2])
-    except ObjectDoesNotExist:
-        return [Item(name=params[0], group=params[1], description=params[2],price=params[2])]
+    def __init__(self, layout):
 
-def getOrders(params):
+        if layout is not None:
 
-    try:
-        return Order.objects.filter(**params)
-    except ObjectDoesNotExist:
-        return [Order(**params)]
+            self.layout = layout
+
+            for array in self.layout:
+                for button in array:
+                    button = getattr(self, button)
+
+class Bot(telebot.TeleBot):
+    
+    def error(self, user, **kwargs):
+        return ("Виникла помилка, будь ласка, спробуйте ще раз", (("MAIN_PAGE",),))
+
+    def start(self, user, **kwargs):
+        return User.authorization_registartion(user, self)
+
+    def send_message(self, user, message_type, message_args={}, **kwargs):
+        
+        def parse_keyboards(text, keyboard=None):
+
+            if "???" not in text: return (text, keyboard)
+            
+            else:
+                
+                pieces = text.split("???")
+                
+                for i in range(0, len(pieces), 2):
+                    subsection_text = pieces[0]
+                    subsection_keyboard_layout = eval(pieces[1])
+                    
+                    yield (subsection_text, subsection_keyboard_layout)
+    
+        func_call = getattr(self, message_type)(user, **message_args)
+        messages = parse_keyboards(*func_call)
+
+        for message in messages:
+            message_text = message[0]
+            keyboard = Keyboard(message[1])
+        
+        super.send_message(user, message_text, reply_markup=keyboard, parser_mode='html', **kwargs)
+
+    @self.callback_query_handler(func=lambda: True)
+    @self.message_handler(content_types=telebot.util.content_type_media)
+    def receive_message(self, message):
+        
+        user = User.get_(id=message.from_user.id)
+
+        try:
+
+            if message.data == "":
+                pass
+            else:
+                self.send_message(user, "error")
+        
+        except:
+            
+            message_text = (message.text[(1 if message.text.startswith("/") else 0):]) # deleting "/" from the command
+
+            if message_text == "start": self.send_message(user, "start")
+            else: self.send_message(user, "error")
+
+
+def send_message(user, text, reply_keyboard):
+    pass
+
 
 @voleybot.callback_query_handler(func=lambda message: message.data == "main page")
 def showMainPage(message):
@@ -213,9 +259,6 @@ def sendQRCode(message):
 
     user.save()
 
-@voleybot.message_handler(commands=["start"])
-def start(message):
-    User.authorization(message.from_user, voleybot)
 
 @voleybot.message_handler()
 def unknownHandler(message):
@@ -226,5 +269,15 @@ def unknownHandler(message):
     voleybot.send_message(message.from_user.id, "Виникла помилка, будь ласка, спробуйте ще раз", reply_markup=MAIN_PAGE_BUTTON_KEYBOARD)
 
 if __name__=="__main__":
+    
+    TOKEN = "1985672373:AAEGmI-gq9wqy1757HkWPt0b36gHQ9MBN5c"
+
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
+    django.setup()
+
+    from voleybotapp.models import User, Item, ItemInCart, ItemsList, Menu, Order, OrderByUser
+
+    voleybot = Bot(TOKEN)
+
     voleybot.polling(none_stop=True)
     while True: pass

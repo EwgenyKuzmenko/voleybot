@@ -1,110 +1,93 @@
-from django.db.models.base import Model
-from django.db.models.fields import related
+from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
+
+import telebot
 
 import qrcode
 import cv2
 
-from django.db import models
-from django.core.exceptions import ObjectDoesNotExist
-
-import telebot
-
 # Create your models here.
 
-class User(models.Model):
+class BotModel(models.Model):
     
-    userID = models.IntegerField()
+    @classmethod
+    def get_(cls, object_, **kwargs):
+
+        rv = object_.objects.filter(**kwargs)
+
+        if len(rv) > 0: return list(rv)
+        
+        else: 
+
+            new_object = object_(kwargs)
+            new_object.save()
+            
+            return list(new_object)
+
+
+class User(BotModel):
+    
+    user_id = models.IntegerField()
     name = models.CharField(max_length=512, null=True)
-    itemCart = models.ForeignKey("itemCart", on_delete=models.CASCADE, null=True)
+    items_list = models.ForeignKey("items_list", on_delete=models.CASCADE, null=True)
     mode=models.CharField(max_length=256, default="null")
 
     @classmethod
-    def authorization(cls, fromUser, bot):
-        
-        try: 
-            user = User.objects.filter(userID=fromUser.id)[0]
-            if user.itemCart is None: 
-                newitemCart = itemCart(relatedTo=user)
-                newitemCart.save()
-                user.itemCart = newitemCart
-                user.save()
-        except: user = User.registration(fromUser)
-
-        user.greeting(bot)
+    def get_(cls, **kwargs):
+        return super().get_(User, **kwargs)
 
     @classmethod
-    def registration(cls, fromUser):
+    def authorization_registartion(cls, from_user):
         
-        print('here2')
+        user = User.get_(user_id=from_user.id, name=from_user.first_name)[0]
+        user.items_list = items_list.get_(related_to=user)[0]
+        user.save()
 
-        newUser = User(userID=fromUser.id, name=fromUser.first_name)
-        newUser.save()
+        return user.greeting()
 
-        newUserItemCart = itemCart(relatedTo=newUser)
-        newUserItemCart.save()
-
-        newUser.itemCart = newUserItemCart
-        newUser.save()
-
-        return newUser
-
-    def greeting(self, bot):
+    def greeting(self):
 
         GREETING_TEXT = f"Вітаємо, {self.name}! Будь ласка, оберіть потрібну дію!"
         
-        BUTTON_SEE_MENU = telebot.types.InlineKeyboardButton(text="Переглянути меню", callback_data="see menu")
-        BUTTON_SEE_CART = telebot.types.InlineKeyboardButton(text="Переглянути мою корзину", callback_data="see cart")
-        BUTTON_SEE_ORDERS = telebot.types.InlineKeyboardButton(text="Переглянути мої замовлення", callback_data="see orders")
-        BUTTON_SCAN_QR_CODE = telebot.types.InlineKeyboardButton(text='Відсканувати QR-код', callback_data="scan qr code")
+        return (GREETING_TEXT, (("MENU", "CART", "ORDERS", "QR_CODE"),))
 
-        REPLY_KEYBOARD_LAYOUT = ((BUTTON_SEE_MENU,), (BUTTON_SEE_CART,), (BUTTON_SEE_ORDERS,), (BUTTON_SCAN_QR_CODE,))
-        REPLY_KEYBOARD_OBJECT = telebot.types.InlineKeyboardMarkup(keyboard=REPLY_KEYBOARD_LAYOUT)
-
-        bot.send_message(self.userID, GREETING_TEXT, reply_markup=REPLY_KEYBOARD_OBJECT)
-
-    def seeMenu(self, bot):
+    def see_menu(self, bot):
         
-        for oldMenu in Menu.objects.all():
-            oldMenu.delete()
+        menu = Menu.get_()[0]
+        menu.show(self.user_id, bot)
+
+    def see_cart(self, bot):
+        self.items_list.show(self.user_id, bot)
+
+    def add_item_to_cart(self, item):
+        item.add_to_cart(self.items_list)
+
+    def delete_from_cart(self, item):
+        item.delete_from_cart(self.items_list)
+
+    def clear_cart(self):
         
-        m=Menu()
-        m.save()
+        newitems_list = items_list(relatedTo=self)
+        newitems_list.save()
 
-        m.show(self.userID, bot)
-
-    def seeCart(self, bot):
-        print(self)
-        self.itemCart.show(self.userID, bot)
-
-    def addItemToCart(self, item):
-        item.addToCart(self.itemCart)
-
-    def deleteItemFromCart(self, item):
-        item.deleteFromCart(self.itemCart)
-
-    def clearCart(self):
-        
-        newItemCart = itemCart(relatedTo=self)
-        newItemCart.save()
-
-        self.itemCart  = newItemCart
+        self.items_list  = newitems_list
         self.save()
 
-    def makeOrder(self):
-        self.itemCart.turnIntoOrder() # TODO maybe thru the order func like the other two?
+    def make_orders(self):
+        self.items_list.turn_into_order() # TODO maybe thru the order func like the other two?
         self.clearCart()
 
-    def seeOrder(self, order):
+    def see_order(self, order):
         return order.show()
 
-    def cancelOrder(self, order):
-        order.getCancelled()
+    def cancel_order(self, order):
+        order.get_cancelled()
 
-    def repeatOrder(self, order):
-        order.getRepeated()
+    def repeat_order(self, order):
+        order.get_repeated()
 
-    def scanQRCode(self, image):
+    def scan_qrcode(self, image):
         
         try:
             img=cv2.imread(image)
@@ -115,7 +98,7 @@ class User(models.Model):
             return False
 
 
-class Item(models.Model):
+class Item(BotModel):
     
     name = models.CharField(max_length=64, default="")
     description = models.CharField(max_length=512, default="")
@@ -123,6 +106,10 @@ class Item(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     isActive = models.BooleanField(default=True)
     QRCodeValue = models.CharField(max_length=512, default="")
+
+    @classmethod
+    def get_(cls, **kwargs):
+        return super().get_(Item, **kwargs)
 
     def getQRCode(self):
 
@@ -163,10 +150,14 @@ class Item(models.Model):
         self.save()
 
 
-class itemCart(models.Model):
+class items_list(BotModel):
     
     relatedTo = models.ForeignKey(User, on_delete=models.CASCADE)
     currentTotal = models.DecimalField(default=0.00, max_digits=64, decimal_places=2)
+
+    @classmethod
+    def get_(cls, **kwargs):
+        return super().get_(items_list, **kwargs)
 
     def receiveItem(self, item):        
         
@@ -181,20 +172,20 @@ class itemCart(models.Model):
 
     def turnIntoOrder(self):
 
-        newOrderItemCart = itemCart(relatedTo=self.relatedTo)
-        newOrderItemCart.save()
+        newOrderitems_list = items_list(relatedTo=self.relatedTo)
+        newOrderitems_list.save()
 
         for connection in ItemInCart.objects.filter(cart=self):
-            newConnectionObject = ItemInCart(item=connection.item, cart=newOrderItemCart)
+            newConnectionObject = ItemInCart(item=connection.item, cart=newOrderitems_list)
             newConnectionObject.cart.receiveItem(connection.item)
             newConnectionObject.save()
 
-        newOrder = Order(orderEr=self.relatedTo,cart=newOrderItemCart)
+        newOrder = Order(orderEr=self.relatedTo,cart=newOrderitems_list)
         newOrder.save()
 
         newOrder.getMade()
 
-    def show(self, userID, bot):
+    def show(self, user_id, bot):
         
         items = list(ItemInCart.objects.filter(cart=self))
 
@@ -224,14 +215,14 @@ class itemCart(models.Model):
             REPLY_KEYBOARD_LAYOUT = ((MINUS_BUTTON, PLUS_BUTTON, CANCEL_BUTTON),)
             REPLY_KEYBOARD_OBJECT = telebot.types.InlineKeyboardMarkup(REPLY_KEYBOARD_LAYOUT)
 
-            bot.send_message(userID, item.name + f" ({quantities[item.name]} x {item.price})", reply_markup=REPLY_KEYBOARD_OBJECT)
+            bot.send_message(user_id, item.name + f" ({quantities[item.name]} x {item.price})", reply_markup=REPLY_KEYBOARD_OBJECT)
         
         MAIN_PAGE_BUTTON = telebot.types.InlineKeyboardButton(text="Повернутися на головну", callback_data="main page")
         SHOW_CART_BUTTON = telebot.types.InlineKeyboardButton(text="Назад до меню", callback_data="see menu")
 
         if not empty:
 
-            bot.send_message(userID, f"Загальна сума корзини: <i>{self.currentTotal}</i>", parse_mode="html")
+            bot.send_message(user_id, f"Загальна сума корзини: <i>{self.currentTotal}</i>", parse_mode="html")
 
             CLEAR_CART_BUTTON = telebot.types.InlineKeyboardButton(text="Очистити корзину", callback_data="clear cart")
             MAKE_ORDER_BUTTON = telebot.types.InlineKeyboardButton(text="Оформити замовлення", callback_data="make order")
@@ -240,31 +231,37 @@ class itemCart(models.Model):
 
         elif empty:
         
-            bot.send_message(userID, "Ваша корзина пуста!")
+            bot.send_message(user_id, "Ваша корзина пуста!")
 
             CONTROLS_KEYBOARD_LAYOUT = ((SHOW_CART_BUTTON, MAIN_PAGE_BUTTON),)
 
         CONTROLS_KEYBOARD_OBJECT = telebot.types.InlineKeyboardMarkup(CONTROLS_KEYBOARD_LAYOUT)
 
-        bot.send_message(userID, "Будь ласка, оберіть потрібну дію", reply_markup=CONTROLS_KEYBOARD_OBJECT)
+        bot.send_message(user_id, "Будь ласка, оберіть потрібну дію", reply_markup=CONTROLS_KEYBOARD_OBJECT)
 
 
-class ItemInCart(models.Model):
+class ItemInCart(BotModel):
 
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    cart = models.ForeignKey(itemCart, on_delete=models.CASCADE)
+    cart = models.ForeignKey(items_list, on_delete=models.CASCADE)
+
+    @classmethod
+    def get_(cls, **kwargs):
+        return super().get_(ItemInCart, **kwargs)
 
 
-class Menu(models.Model):
+class Menu(BotModel):
 
     groups = models.CharField(default="", max_length=2048, null=True)
     groups_dict = {}
 
+    @classmethod
+    def get_(cls, **kwargs):
+        return super().get_(Menu, **kwargs)
+
     def update(self):
         
         tmp = {}
-
-        print(Item.objects.all())
 
         for item in Item.objects.all():
             if not item.group in tmp.keys(): tmp[item.group] = []
@@ -275,36 +272,41 @@ class Menu(models.Model):
         
         self.save()
 
-    def show(self, userID, bot):
+    def show(self):
         
         self.update()
 
-        print(self.groups_dict)
+        rv = ''
 
         for key in self.groups_dict.keys():
 
-            bot.send_message(userID, "<b>"+key+"</b>" + ("\n")*2, parse_mode="html")
+            rv += "<b>"+key+"</b>" + ("\n")*2
             
             for item in self.groups_dict[key]:
                 ADD_TO_CART_BUTTON = telebot.types.InlineKeyboardButton(text="Додати в корзину", callback_data="NULL".join(("add to cart", item.name, item.group, str(item.price))))
                 ADD_TO_CART_KEYBOARD = telebot.types.InlineKeyboardMarkup(keyboard=((ADD_TO_CART_BUTTON,),))
                 
-                bot.send_message(userID, f"{item.name}\n<i>{item.description}</i>\n<i>{str(item.price)}</i>\n\n", parse_mode="html", reply_markup=ADD_TO_CART_KEYBOARD)
-        
+                rv += f"{item.name}\n<i>{item.description}</i>\n<i>{str(item.price)}</i>\n\n"+"???" + "???"
+
         MAIN_PAGE_BUTTON = telebot.types.InlineKeyboardButton(text="Повернутися на головну", callback_data="main page")
         SHOW_CART_BUTTON = telebot.types.InlineKeyboardButton(text="Перейти до корзини", callback_data="see cart")
         
         CONTROLS_KEYBOARD_LAYOUT = ((MAIN_PAGE_BUTTON, SHOW_CART_BUTTON),)
         CONTROLS_KEYBOARD_OBJECT = telebot.types.InlineKeyboardMarkup(CONTROLS_KEYBOARD_LAYOUT)
         
-        bot.send_message(userID, "Будь ласка, оберіть потрібну дію", reply_markup=CONTROLS_KEYBOARD_OBJECT)
+        bot.send_message(user_id, "Будь ласка, оберіть потрібну дію", reply_markup=CONTROLS_KEYBOARD_OBJECT)
 
-class Order(models.Model):
+
+class Order(BotModel):
 
     orderEr = models.ForeignKey(User, on_delete=models.CASCADE)
-    cart = models.ForeignKey(itemCart, on_delete=models.CASCADE, null=True)
+    cart = models.ForeignKey(items_list, on_delete=models.CASCADE, null=True)
     datetime = models.DateTimeField(null=True, default=now)
     status = models.CharField(null=True, max_length=64)
+
+    @classmethod
+    def get_(cls, **kwargs):
+        return super().get_(Order, **kwargs)
 
     def getMade(self):
         self.status = "Готується"
@@ -358,3 +360,10 @@ class Order(models.Model):
         replyKeyboardObject = telebot.types.InlineKeyboardMarkup(replyKeyboardLayout)
 
         return rv, replyKeyboardObject
+
+
+class OrderByUser(BotModel):
+    
+    @classmethod
+    def get_(cls, **kwargs):
+        return super().get_(OrderByUser, **kwargs)
