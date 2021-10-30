@@ -18,14 +18,15 @@ def _get_objects_(model, filter_by, form="obj"):
     if form == "json": return HttpResponse(serializers.serialize('json', getattr(models, model).objects.filter(**filter_by)), content_type='application/json')
     if form == "obj": return getattr(models, model).objects.filter(**filter_by)
 
-def make_object(model, object_data):
+def make_object(model, object_data, with_return=True, form="obj"):
     
     model_obj = getattr(models, model)
     
     for record in object_data:
         model_obj.objects.create(**record)
     
-    return HttpResponse(status=201)
+    if not with_return: return HttpResponse(status=201)
+    else: return _get_objects_(model, object_data, form) 
 
 def edit_object(model, object_data, field_to_edit, new_value, mode="obj"):
     
