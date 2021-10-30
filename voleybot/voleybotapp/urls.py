@@ -1,9 +1,9 @@
 from django.urls import path
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns, urlpatterns
 
 from . import views
 
-urlpatterns = [
+'''urlpatterns = [
     path('', views.orders, name='index'),
     path('index', views.orders, name='index'),
     path("orders", views.orders, name="orders"),
@@ -15,4 +15,5 @@ urlpatterns = [
     path("items/changestatus/<int:itemID>", views.changeitemstatus, name='items/changestatus'),
     path("orderReady/<int:orderID>/<int:orderErID>", views.orderReady, name="orderReady"),
     path("orderCancel/<int:orderID>/<int:orderErID>", views.orderCancel, name="orderReady"),
-]
+]'''
+urlpatterns = []
