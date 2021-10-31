@@ -79,7 +79,10 @@ WSGI_APPLICATION = 'voleybot.wsgi.application'
 DATABASE_ROUTERS = ('voleybotapp.dbrouters.defaultFileScan',)
 
 DATABASES = {
-    'default': {},
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'django.sqlite3',        
+    },
     'core': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'core.sqlite3',

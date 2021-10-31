@@ -46,15 +46,14 @@ def delete_object(model, object_data, object_to_be_deleted, mode="obj"):
     
     object_to_be_deleted.delete()
 
-def make_new_user(user_name):
+def make_new_user(user_name, mode="obj"):
     
     user_obj = make_object("Customer", {"name": user_name})
     user_cart_obj = make_object("Cart", {"belongs_type": "Customer", "belongs_id": user_obj.id})
     edit_object("Customer", user_obj, "cart_id", user_cart_obj.id)
 
-    return _get_objects_("Customer", {"name": user_name}, "json")
+    return _get_objects_("Customer", {"name": user_name}, mode)
 
-def edit_user_language(user_id, language_id):
-    user_obj = _get_objects_("Customer", {"id": user_id})
-    edit_object("Customer", user_obj, "language_code", language_id)
+def edit_user_language(user, language_id):
+    edit_object("Customer", user, "language_code", language_id)
     return HttpResponse(status=201)

@@ -9,7 +9,7 @@ from django.utils.timezone import now
 
 class Customer(models.Model):
 
-    name = models.CharField(unique=True, max_length=128)
+    name = models.CharField(max_length=128)
     cart_id = models.IntegerField()
     orders_ids = models.CharField(max_length=5096)
     language_code = models.CharField(max_length=128)
@@ -24,6 +24,7 @@ class Item(models.Model):
     group_level = models.IntegerField(default=1)
     in_carts_ids = models.CharField(max_length=5096, blank=True)
     qrcode_id = models.IntegerField()
+    photo_address = models.CharField(max_length=512, blank=True)
 
 class Group(models.Model):
     
@@ -75,7 +76,8 @@ class TextString(models.Model):
 
 class TelUser(models.Model):
 
-    core_db_id = models.IntegerField()
+    tel_id = models.IntegerField(unique=True)
+    core_db_id = models.IntegerField(unique=True)
 
 class Button(models.Model):
 
