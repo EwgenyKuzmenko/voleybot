@@ -20,10 +20,8 @@ def _get_objects_(model, filter_by, form="obj"):
 
 def make_object(model, object_data, with_return=True, form="obj"):
     
-    model_obj = getattr(models, model)
-    
-    for record in object_data:
-        model_obj.objects.create(**record)
+    model_obj = getattr(models, model)  
+    model_obj.objects.create(**object_data)
     
     if not with_return: return HttpResponse(status=201)
     else: return _get_objects_(model, object_data, form) 
@@ -33,6 +31,8 @@ def edit_object(model, object_data, field_to_edit, new_value, mode="obj"):
     if mode == "json": 
         del object_data[object_data.keys()[0]]
         object_to_edit = _get_objects_(model, object_data)
+    else:
+        object_to_edit = object_data[0]
 
     setattr(object_to_edit, field_to_edit, new_value)
     object_to_edit.save()
@@ -49,8 +49,8 @@ def delete_object(model, object_data, object_to_be_deleted, mode="obj"):
 def make_new_user(user_name, mode="obj"):
     
     user_obj = make_object("Customer", {"name": user_name})
-    user_cart_obj = make_object("Cart", {"belongs_type": "Customer", "belongs_id": user_obj.id})
-    edit_object("Customer", user_obj, "cart_id", user_cart_obj.id)
+    user_cart_obj = make_object("Cart", {"belongs_type": "Customer", "belongs_id": user_obj[0].id})
+    edit_object("Customer", user_obj, "cart_id", user_cart_obj[0].id)
 
     return _get_objects_("Customer", {"name": user_name}, mode)
 

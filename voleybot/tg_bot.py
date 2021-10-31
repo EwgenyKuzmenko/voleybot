@@ -15,27 +15,32 @@ if __name__=="__main__":
 
     # // Functions Start
 
+    def get_button(): pass
+
+    def get_keyboard(): pass
+
     @voleybot_.message_handler(commands=['start',])
     def start(meta):
 
         tel_user_object_list = views._get_objects_("TelUser", {"tel_id": meta.from_user.id})
 
-        if not len(tel_user_object_list):
+        if len(tel_user_object_list) == 0:
             core_user_obj = views.make_new_user(meta.from_user.first_name)
-            views.make_object("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj.id}, with_return=False)
+            views.make_object("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
             show_language_selection(meta)
 
         else: 
-            show_main_menu()
+            show_main_menu(meta)
 
     def show_language_selection(meta):
 
             strings_to_print = views._get_objects_("TextString", {"str_id": 1})
+            message_text = ""
 
             for string_ in strings_to_print:
-                voleybot_.send_message(meta.from_user.id, string_.Text) 
+                message_text += string_.text+"\n\n"
 
-            #views.edit_user_language()
+            voleybot_.send_message(meta.from_user.id, message_text) 
 
     def show_main_menu(meta): pass
 
