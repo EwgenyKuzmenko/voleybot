@@ -12,7 +12,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=128)
     cart_id = models.IntegerField(default=1)
     orders_ids = models.CharField(max_length=5096)
-    language_code = models.CharField(max_length=128, default=1)
+    language_code = models.CharField(max_length=128, default="1")
 
 class Item(models.Model):
     
@@ -34,9 +34,9 @@ class Group(models.Model):
 
 class Cart(models.Model):
     
-    belongs_type = models.CharField(max_length=128)
-    belongs_id =  models.IntegerField()
-    items = models.CharField(max_length=128)
+    belongs_type = models.CharField(max_length=128, default="Customer")
+    belongs_id =  models.IntegerField(default=1)
+    items = models.CharField(max_length=128, blank=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
 class Order(models.Model):
@@ -44,7 +44,7 @@ class Order(models.Model):
     orderer_id = models.IntegerField(unique=True)
     cart_id = models.IntegerField(unique=True)
     datetime = models.DateTimeField(default=django.utils.timezone.now)
-    status = models.CharField(max_length=128)
+    status = models.CharField(max_length=128, default="Getting ready")
 
 class QRCode(models.Model):
     
@@ -60,12 +60,12 @@ class QRCode(models.Model):
 
 class Language(models.Model):
 
-    presentation_string = models.CharField(max_length=512)
+    code = models.CharField(max_length=512, default="uk")
 
 class TextString(models.Model):
 
-    str_id = models.IntegerField()
-    lang_id = models.IntegerField()
+    str_id = models.IntegerField(default=1)
+    lang_id = models.IntegerField(default=1)
     text = models.CharField(max_length=5096)
 
 # ///
@@ -81,11 +81,12 @@ class TelUser(models.Model):
 
 class Button(models.Model):
 
-    label_id = models.IntegerField()
-    on_press_action = models.CharField(max_length=5096)
+    label_id = models.IntegerField(default=1)
+    on_press_action = models.CharField(max_length=5096, blank=True)
 
 class Keyboard(models.Model):
     
-    layout_x = models.IntegerField()
-    layout_x = models.IntegerField()
+    layout_x = models.IntegerField(default=0)
+    layout_y = models.IntegerField(default=0)
     buttons = models.CharField(max_length=512)
+    on_init_action = models.CharField(max_length=5096, blank=True)

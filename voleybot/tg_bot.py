@@ -1,6 +1,9 @@
 import os
 import django
 
+import telebot
+from telebot import types
+
 if __name__=="__main__":
     
     TOKEN = "1985672373:AAEGmI-gq9wqy1757HkWPt0b36gHQ9MBN5c"
@@ -8,7 +11,6 @@ if __name__=="__main__":
     os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
     django.setup()
 
-    import telebot
     import voleybotapp.views as views
 
     voleybot_ = telebot.TeleBot(TOKEN)
@@ -17,7 +19,20 @@ if __name__=="__main__":
 
     def get_button(): pass
 
-    def get_keyboard(): pass
+    def get_keyboard(keyboard_id):
+
+        keyboard_object = views._get_objects_("Keyboard", {"id": keyboard_id})[0]
+
+        x = keyboard_object.layout_x
+        y = keyboard_object.layout_y
+
+        keyboard_buttons
+
+        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+
+        exec(keyboard_object.on_init_action)
+
+        return keyboard
 
     @voleybot_.message_handler(commands=['start',])
     def start(meta):
