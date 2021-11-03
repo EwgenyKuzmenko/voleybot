@@ -16,4 +16,6 @@ from . import views
     path("orderReady/<int:orderID>/<int:orderErID>", views.orderReady, name="orderReady"),
     path("orderCancel/<int:orderID>/<int:orderErID>", views.orderCancel, name="orderReady"),
 ]'''
-urlpatterns = []
+urlpatterns = [
+    path('menu', views.get_menu, name="menu"),
+]

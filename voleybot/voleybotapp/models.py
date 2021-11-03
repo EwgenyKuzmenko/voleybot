@@ -91,3 +91,4 @@ class Keyboard(models.Model):
     buttons = models.CharField(max_length=512)
     on_init_action = models.TextField(max_length=5096, blank=True)
     one_time_keyboard = models.BooleanField(default=True)
+    label_id = models.IntegerField(default=1)
