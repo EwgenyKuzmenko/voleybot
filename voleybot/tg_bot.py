@@ -17,7 +17,7 @@ if __name__=="__main__":
 
     # // Functions Start
 
-    def get_button_s(button_id, language_code):
+    def get_button_s(user_id, button_id, language_code):
         
         rv = list()
 
@@ -35,7 +35,7 @@ if __name__=="__main__":
         for language in language_codes:
             language_obj = views._get_objects_("Language", {"code": language})[0]
             text_obj = views._get_objects_("TextString", {"str_id": button_obj.label_id, "lang_id": language_obj.id})[0]
-            button_callback_data = "_".join((str(button_obj.id), button_obj.on_press_action))
+            button_callback_data = "_".join((text_obj.text, str(button_obj.id), str(user_id)))
             rv.append(types.InlineKeyboardButton(text=text_obj.text, callback_data=button_callback_data))
 
         return rv
@@ -65,7 +65,7 @@ if __name__=="__main__":
             keyboard_layout.append(list())
             for j in range(y):
                 if len(keyboard_buttons) > 0:
-                    for return_button in get_button_s(keyboard_buttons[0], language_code):
+                    for return_button in get_button_s(meta.from_user.id, keyboard_buttons[0], language_code):
                         keyboard_layout[i].append(return_button)
                     del keyboard_buttons[0]
 
@@ -81,7 +81,9 @@ if __name__=="__main__":
         voleybot_.answer_callback_query(callback_data.id)
         
         button_data = callback_data.data.split("_")
-        exec(button_data[1])
+        button_obj = views._get_objects_("Button", {"id": button_data[1]})[0]
+        exec(button_obj.on_press_action)
+
 
     @voleybot_.message_handler(commands=['start',])
     def start(meta):
@@ -111,7 +113,8 @@ if __name__=="__main__":
             
             voleybot_.send_message(meta.from_user.id, message_text, reply_markup=message_keyboard) 
 
-    def show_main_menu(meta): pass
+    def show_main_menu(meta):
+        print("This is main menu")
 
     # // Functions End
 

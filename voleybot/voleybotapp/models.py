@@ -82,12 +82,12 @@ class TelUser(models.Model):
 class Button(models.Model):
 
     label_id = models.IntegerField(default=1)
-    on_press_action = models.CharField(max_length=5096, blank=True)
+    on_press_action = models.TextField(max_length=5096, blank=True)
 
 class Keyboard(models.Model):
     
     layout_x = models.IntegerField(default=0)
     layout_y = models.IntegerField(default=0)
     buttons = models.CharField(max_length=512)
-    on_init_action = models.CharField(max_length=5096, blank=True)
+    on_init_action = models.TextField(max_length=5096, blank=True)
     one_time_keyboard = models.BooleanField(default=True)
