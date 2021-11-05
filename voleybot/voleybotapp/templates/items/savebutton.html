@@ -1,2 +1,30 @@
-<button>{{local.6}}
-</button>
+<button onclick="save_button_click(this)">{{local.6}}</button>
+
+<script>
+    function activeHandler(string) {
+        if (string == "on") {
+            return "True";
+        } else {
+            return "False";
+        }
+    }
+    
+    function save_button_click(button) {
+        if (document.getElementById("items_id").value == "new_item")
+        {
+            var new_item_data = {
+                "name": document.getElementById("item_name").value,
+                "description": document.getElementById("item_description").value,
+                "price": document.getElementById("item_price").value,
+                "is_active": activeHandler(document.getElementById("item_active").value),
+                "group_id": document.getElementById("item_group").value,
+                "photo_address": document.getElementById("item_photo").value
+            };
+
+            const http = new XMLHttpRequest()
+            http.open("GET", window.location.origin + "/new_item/" + JSON.stringify(new_item_data));
+            http.send();
+            //document.location.reload()
+        }
+    }
+</script>

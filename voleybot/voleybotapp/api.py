@@ -66,3 +66,6 @@ def get_menu(mode="obj"):
     
 
     return rv
+
+def make_item(item_data):
+    make_object("Item", item_data, False)

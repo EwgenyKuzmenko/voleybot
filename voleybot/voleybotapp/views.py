@@ -1,3 +1,4 @@
+from django.db import connection
 from django.shortcuts import render
 from django.core import serializers
 from django.http import HttpResponse
@@ -33,4 +34,14 @@ def get_orders(request):
     return render(request, "topbar.html")
 
 def get_items(request, language_code):
-    return render(request, "items/page.html", {"languages": get_languages(), "local_array": get_text(language_code)})
+    return render(request, "items/page.html", {"items": api._get_objects_("Item", {}), "languages": get_languages(), "local_array": get_text(language_code)})
+
+def make_item(request, new_item_data):
+    
+    item_data = {k: v for k, v in eval(new_item_data).items() if v}
+    
+    api.make_item(item_data)
+    return(HttpResponse(status=200))
+
+def edit_item(request, data):
+    pass
