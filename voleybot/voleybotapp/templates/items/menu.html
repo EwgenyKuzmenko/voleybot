@@ -1,0 +1,7 @@
+<select id=items_id name=items_name>
+    <option value="new_item" selected>{{local.5}}</option>
+    {% for item in items reversed %}
+        <option value={{item.id}}>{{item.name}}</option>
+    {% endfor %}
+</select>   
+<hr>

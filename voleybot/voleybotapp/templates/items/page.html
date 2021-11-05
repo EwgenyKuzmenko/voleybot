@@ -1,0 +1,9 @@
+<html>
+    <head></head>
+    <body>
+        {% include "topbar.html" with languages=languages local=local_array %}
+        {% include "./menu.html" with local=local_array %}
+        {% include "./table/table.html" with local=local_array %}
+        {% include "./savebutton.html" with local=local_array %}
+    </body>
+</html>

@@ -17,5 +17,7 @@ from . import views
     path("orderCancel/<int:orderID>/<int:orderErID>", views.orderCancel, name="orderReady"),
 ]'''
 urlpatterns = [
-    path('menu', views.get_menu, name="menu"),
+    path('<str:language_code>/menu', views.get_menu, name="menu"),
+    path("<str:language_code>/orders", views.get_orders, name="orders"),
+    path('<str:language_code>/items', views.get_items, name="items")
 ]
