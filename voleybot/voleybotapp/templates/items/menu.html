@@ -1,4 +1,4 @@
-<select id=items_id name=items_name>
+<select id=items_id onchange="item_select(this)" name=items_name>
     <option value="new_item" selected>{{local.5}}</option>
     {% for item in items reversed %}
         <option value={{item.id}}>{{item.name}}</option>

@@ -1,6 +1,54 @@
-<button onclick="save_button_click(this)">{{local.6}}</button>
+<table style="width:100%">
+    <tr>
+        <td colspan="2">
+            <button id="save_button" disabled onclick="save_button_click(this)">{{local.6}}</button>
+        </td>
+        <td style="text-align: right">
+            <button id="delete_button" disabled onclick="delete_button_click(this)">{{local.1}}</button>
+        </td>
+    </tr>
+</table>
 
 <script>
+
+    function test(obj) {
+        alert(obj.response);
+    }
+
+    function item_select(obj) {
+
+        if (obj.value == "new_item") {
+            
+            document.getElementById("item_name").value = '';
+            document.getElementById("item_description").value = '';
+            document.getElementById("item_price").value = '';
+            document.getElementById("item_photo").value = '';
+            document.getElementById("item_image").src = '#';
+            document.getElementById("item_group").value = '';
+            document.getElementById("item_qrcode").src = '#';
+            document.getElementById("item_active").checked = false;
+            check_save_button();
+            check_delete_button();
+        
+        } else {
+
+            const http = new XMLHttpRequest();
+            http.open("GET", window.location.origin + "/get_item/" + obj.value, true);
+            http.onreadystatechange = test(this);
+            http.send();
+
+            check_save_button();
+            check_delete_button();
+        }
+    }
+
+    function photoHandler(obj) {
+        const [file] = obj.files;
+        if (file) {
+            return URL.createObjectURL(file).outerHTML;
+        }
+    }
+
     function activeHandler(string) {
         if (string == "on") {
             return "True";
@@ -9,6 +57,22 @@
         }
     }
     
+    function check_save_button() {
+        if (document.getElementById("item_name").value != "" && document.getElementById("item_price").value != "") {
+            document.getElementById("save_button").disabled = false;
+        } else {
+            document.getElementById("save_button").disabled = true;
+        }
+    }
+
+    function check_delete_button() {
+        if (document.getElementById("items_id").value != "new_item") {
+            document.getElementById("delete_button").disabled = false;
+        } else {
+            document.getElementById("delete_button").disabled = true;
+        }
+    }
+
     function save_button_click(button) {
         if (document.getElementById("items_id").value == "new_item")
         {
@@ -18,13 +82,17 @@
                 "price": document.getElementById("item_price").value,
                 "is_active": activeHandler(document.getElementById("item_active").value),
                 "group_id": document.getElementById("item_group").value,
-                "photo_address": document.getElementById("item_photo").value
+                "photo_address": photoHandler(document.getElementById("item_photo"))
             };
 
-            const http = new XMLHttpRequest()
+            const http = new XMLHttpRequest();
             http.open("GET", window.location.origin + "/new_item/" + JSON.stringify(new_item_data));
             http.send();
             //document.location.reload()
         }
+    }
+
+    function delete_button_click(button) {
+        alert(" ");
     }
 </script>

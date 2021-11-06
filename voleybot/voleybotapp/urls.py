@@ -22,6 +22,7 @@ urlpatterns = [
     path('<str:language_code>/menu', views.get_menu, name="menu"),
     path("<str:language_code>/orders", views.get_orders, name="orders"),
     path('<str:language_code>/items', views.get_items, name="items"),
-    path("new_item/<str:new_item_data>", views.make_item, name="new_item"),
-    path("edit_item", views.edit_item, name="edit_item")
+    path('new_item/<str:new_item_data>', views.make_item, name="new_item"),
+    path('get_item/<str:item_id>', views.get_item, name="get_item"),
+    path('edit_item', views.edit_item, name="edit_item")
 ]

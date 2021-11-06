@@ -5,8 +5,26 @@
                 {{local.10}}
             </td>
             <td>
-                <input id="item_photo" type="file" accept="image/*"></input>
+                <table>
+                     <tr>
+                         <td>
+                            <input id="item_photo" type="file" accept="image/*"></input>
+                         </td>
+                         <td>
+                            <img id="item_image" src="#" style="max-width:300"/>    
+                        </td>
+                     </tr>
+                </table>
             </td>
         </tr>
     </table>
 </td>
+
+<script>
+    item_photo.onchange = evt => {
+        const [file] = item_photo.files
+        if (file) {
+            item_image.src = URL.createObjectURL(file)
+        }
+    }
+</script>

@@ -24,7 +24,7 @@ class Item(models.Model):
     group_level = models.IntegerField(default=1)
     in_carts_ids = models.CharField(max_length=5096, blank=True)
     qrcode_id = models.IntegerField(default=1)
-    photo_address = models.CharField(max_length=512, blank=True)
+    image_path = models.CharField(max_length=1024, blank=True)
 
 class Group(models.Model):
     
@@ -49,7 +49,6 @@ class Order(models.Model):
 class QRCode(models.Model):
     
     code_value = models.CharField(unique=True, max_length=128)
-    image_address = models.CharField(unique=True, max_length=128)
     item_id = models.CharField(unique=True, max_length=128)
 
 # ///

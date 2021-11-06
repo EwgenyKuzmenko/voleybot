@@ -138,7 +138,7 @@ if __name__=="__main__":
 
         if len(tel_user_object_list) == 0:
             core_user_obj = api.make_new_user(meta.from_user.first_name)
-            api.make_object("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
+            api._make_object_("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
             show_language_selection(meta)
 
         else: 
@@ -157,6 +157,11 @@ if __name__=="__main__":
     def show_user_cart(): pass
 
     def show_orders(): pass
+
+    def return_to_main_page():
+
+        #
+        show_main_page()
 
     # // Functions End
 

@@ -1,6 +1,4 @@
-from django.db import connection
 from django.shortcuts import render
-from django.core import serializers
 from django.http import HttpResponse
 
 import voleybotapp.api as api
@@ -38,10 +36,15 @@ def get_items(request, language_code):
 
 def make_item(request, new_item_data):
     
-    item_data = {k: v for k, v in eval(new_item_data).items() if v}
-    
-    api.make_item(item_data)
+    api.make_item(new_item_data)
     return(HttpResponse(status=200))
+
+def get_item(request, item_id):
+    print('here')
+    print(item_id)
+    return HttpResponse(item_id+"test_test_test")
 
 def edit_item(request, data):
     pass
+
+def delete_item(request): pass
