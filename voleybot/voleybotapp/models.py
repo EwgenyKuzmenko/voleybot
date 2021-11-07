@@ -50,6 +50,7 @@ class QRCode(models.Model):
     
     code_value = models.CharField(unique=True, max_length=128)
     item_id = models.CharField(unique=True, max_length=128)
+    image_path = models.CharField(max_length=1024, blank=True)
 
 # ///
 # Core DB End

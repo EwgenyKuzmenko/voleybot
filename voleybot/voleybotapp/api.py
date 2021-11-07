@@ -6,6 +6,7 @@ import qrcode
 import cv2
 import urllib.request
 
+import os
 import sys
 sys.path.append("..")
 
@@ -23,6 +24,7 @@ def _make_object_(model, object_data, with_return=True):
 
     model_obj = getattr(models, model)
     object_data = _filter_data_(model_obj, object_data, False)
+    print(object_data)
     model_obj.objects.create(**object_data)
     
     if with_return: return _get_objects_(model, object_data) 
@@ -49,20 +51,20 @@ def edit_user_language(user_id, language_id):
     user_obj = _get_objects_("Customer", {"id": tel_obj.core_db_id})[0]
     _edit_object_("Customer", user_obj, "language_code", language_id)
 
-def make_item(item_data):
-    
-    photo_address = item_data.photo_address
+def make_item(item_data, photo_path):
+    print(photo_path[6:-1]+".html")
+    urllib.request.urlretrieve(photo_path[6:-1]+".html", f"/voleybotapp/static/items/12s.png")
 
     new_item_obj = _make_object_("Item", item_data)
     new_item_qr_code = generate_qr_code()
 
-    urllib.request.urlretrieve(photo_address, f"/voleybotapp/static/items/{new_item_obj.id}.png")
+    #urllib.request.urlretrieve(photo_address, f"/voleybotapp/static/items/{new_item_obj.id}.png")
 
     _edit_object_(new_item_obj, "qrcode_id", new_item_qr_code.id)
-    _edit_object_(new_item_obj, "image_path", f"/voleybotapp/static/items/{new_item_obj.id}.png")
+    _edit_object_(new_item_obj, "image_path", os.getcwd()+"/voleybotapp/static/items/{new_item_obj.id}.png")
     _edit_object_(new_item_qr_code, "item_id", new_item_obj.id)
 
-    tg.return_to_main_page()
+    #tg.return_to_main_page()
 
 def edit_item(item_id, item_data):
     pass
@@ -87,7 +89,8 @@ def generate_qr_code():
 
     qr_code_obj = _make_object_("QRCode", {"value": random_value})
     qr_code_image = qrcode.make(random_value)
-    qr_code_image.save(f"/voleybotapp/static/qr_codes/{qr_code_obj.id}.png")
+    qr_code_image.save(os.getcwd()+f"/voleybotapp/static/qr_codes/{qr_code_obj.id}.png")
+    _edit_object_(qr_code_obj, "image_path", os.getcwd()+f"/voleybotapp/static/qr_codes/{qr_code_obj.id}.png")
 
     return qr_code_obj
 

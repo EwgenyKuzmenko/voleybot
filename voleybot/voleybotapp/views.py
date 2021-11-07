@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.core import serializers
 
 import voleybotapp.api as api
 
@@ -24,6 +25,13 @@ def get_text(language_code):
         rv.append(text_obj.text)
     return rv
 
+def get_object(request, obj_type, filter_by):
+    
+    obj = api._get_objects_(obj_type, eval(filter_by))
+    rv = serializers.serialize('json', obj)
+
+    return HttpResponse(rv, content_type='application/json')
+
 def get_menu(request):
     menu = api.get_menu()
     return render(request, "topbar.html")
@@ -34,15 +42,10 @@ def get_orders(request):
 def get_items(request, language_code):
     return render(request, "items/page.html", {"items": api._get_objects_("Item", {}), "languages": get_languages(), "local_array": get_text(language_code)})
 
-def make_item(request, new_item_data):
+def make_item(request, new_item_data, photo_path):
     
-    api.make_item(new_item_data)
+    api.make_item(eval(new_item_data), photo_path)
     return(HttpResponse(status=200))
-
-def get_item(request, item_id):
-    print('here')
-    print(item_id)
-    return HttpResponse(item_id+"test_test_test")
 
 def edit_item(request, data):
     pass
