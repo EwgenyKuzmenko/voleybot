@@ -1,9 +1,37 @@
 <html>
-    <head></head>
-    <body>
-        {% include "topbar.html" with languages=languages local=local_array %}
-        {% include "./menu.html" with items=items local=local_array %}
-        {% include "./table/table.html" with local=local_array %}
-        {% include "./savebutton.html" with local=local_array %}
+    <head>
+        <script>
+            function language_change(page) {
+        
+                language_code = document.getElementById("languages_id").value;
+
+                url_string = window.location.origin + "/get_text/" + language_code;
+                $.getJSON(url_string, function(data, jqXHR){ 
+                    
+                    document.getElementById("orders").innerText=data[2].fields.text;
+                    document.getElementById("items").innerText = data[3].fields.text;
+                    document.getElementById("menu").innerText = data[4].fields.text;
+                    
+                    if (page=="items") {
+                        document.getElementById("new_item").innerText = data[5].fields.text;
+                        document.getElementById("name_string").innerText = data[7].fields.text;
+                        document.getElementById("description_string").innerText = data[8].fields.text;
+                        document.getElementById("price_string").innerText = data[9].fields.text;
+                        document.getElementById("photo_string").innerText = data[10].fields.text;
+                        document.getElementById("group_string").innerText = data[11].fields.text;
+                        document.getElementById("qrcode_string").innerText = data[12].fields.text;
+                        document.getElementById("active_string").innerText = data[13].fields.text;
+                        document.getElementById("save_button").innerText = data[6].fields.text;
+                        document.getElementById("delete_button").innerText = data[14].fields.text;
+                    }
+                });                
+            }
+        </script>
+    </head>
+    <body onload="language_change('items')">
+        {% include "topbar.html" with languages=languages %}
+        {% include "./menu.html" with items=items %}
+        {% include "./table/table.html" %}
+        {% include "./savebutton.html" %}
     </body>
 </html>

@@ -20,7 +20,7 @@ class Item(models.Model):
     description = models.CharField(max_length=128)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_active = models.BooleanField(default=True)
-    group_id = models.IntegerField(default=1)
+    group_id = models.IntegerField(default=1, blank=True)
     group_level = models.IntegerField(default=1)
     in_carts_ids = models.CharField(max_length=5096, blank=True)
     qrcode_id = models.IntegerField(default=1)
@@ -48,8 +48,8 @@ class Order(models.Model):
 
 class QRCode(models.Model):
     
-    code_value = models.CharField(unique=True, max_length=128)
-    item_id = models.CharField(unique=True, max_length=128)
+    value = models.CharField(unique=True, max_length=128)
+    item_id = models.CharField(max_length=128)
     image_path = models.CharField(max_length=1024, blank=True)
 
 # ///

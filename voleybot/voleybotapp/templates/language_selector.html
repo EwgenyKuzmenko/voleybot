@@ -1,24 +1,5 @@
-<select name="languages_name" id="languages_id" onfocus="language_pre_change(this)" onchange="language_change(this)">
+<select name="languages_name" id="languages_id" onchange="language_change('items')">
     {% for language in languages reversed %}
-        {% if language.0 in request.path %}
-            <option value={{language.0}} selected>{{language.1}}</option>
-        {% else %}
-            <option value={{language.0}}>{{language.1}}</option>
-        {% endif %}
+        <option value={{language.0}}>{{language.1}}</option>
     {% endfor %}
 </select>
-
-<script>
-    var old_language_code = "";
-
-    function language_pre_change(language_object) {
-        window.old_language_code = language_object.value;
-    }
-
-    function language_change(language_object) {
-        var new_language_code = language_object.value;
-        var current_url = window.location.href;
-        var new_url = current_url.replace(window.old_language_code, new_language_code);
-        window.location.href = new_url;
-    }
-</script>

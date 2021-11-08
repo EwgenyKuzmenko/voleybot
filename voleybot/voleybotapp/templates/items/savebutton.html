@@ -12,6 +12,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
 <script>
+
     function item_select(obj) {
 
         if (obj.value == "new_item") {
@@ -29,20 +30,22 @@
         
         } else {
 
-            url_string = window.location.origin + "/get_obj/Item/" + obj.value;
+            url_string = window.location.origin + "/get_obj/Item/" + "{'id': " + obj.value + "}";
             $.getJSON(url_string, function(data, jqXHR){
 
-                url_string = window.location.origin + "/get_obj/Group/" + data[0].fields.group;
-                $.getJSON(url_string, function(data, jqXHR){ 
-                    document.getElementById("item_group").value = data[0].fields.name;
-                });
+                //url_string = window.location.origin + "/get_obj/Group/" + "{'group_id': " + data[0].fields.group + "}";
+                //$.getJSON(url_string, function(data, jqXHR){ 
+                //    document.getElementById("item_group").value = data[0].fields.name;
+                //});
 
-                url_string = window.location.origin + "/get_obj/QRCode/" + data[0].fields.qrcode_id;
+                url_string = window.location.origin + "/get_obj/QRCode/" + "{'id': " +data[0].fields.qrcode_id + "}";
                 $.getJSON(url_string, function(data, jqXHR){
                     document.getElementById("item_qrcode").src = data[0].fields.image_path;
                 });
 
                 document.getElementById("item_name").value = data[0].fields.name;
+                document.getElementById("item_name").disabled = data[0].fields.name;
+
                 document.getElementById("item_description").value = data[0].fields.description;
                 document.getElementById("item_price").value = data[0].fields.price;
                 document.getElementById("item_image").src = data[0].fields.image_path;
@@ -54,8 +57,8 @@
         }
     }
 
-    function activeHandler(string) {
-        if (string == "on") {
+    function activeHandler(boolean_value) {
+        if (boolean_value === true) {
             return "True";
         } else {
             return "False";
@@ -81,18 +84,49 @@
     function save_button_click(button) {
         if (document.getElementById("items_id").value == "new_item")
         {
-            var new_item_data = {
-                "name": document.getElementById("item_name").value,
-                "description": document.getElementById("item_description").value,
-                "price": document.getElementById("item_price").value,
-                "is_active": activeHandler(document.getElementById("item_active").value),
-                "group_id": document.getElementById("item_group").value,
-                //"image_path": document.getElementById("item_image").src
-            };
+            var new_item_data = new FormData();
+            new_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            new_item_data.append('name', document.getElementById("item_name").value);
+            new_item_data.append('description', document.getElementById("item_description").value);
+            new_item_data.append('price', document.getElementById("item_price").value);
+            new_item_data.append('image', document.getElementById("item_photo").files[0]);
+            new_item_data.append('group_id', document.getElementById("item_group").value);
+            new_item_data.append('is_active', activeHandler(document.getElementById("item_active").checked));
+            
+            $.ajax({
+            url: window.location.origin + '/new_item',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: new_item_data,
+            });
 
-            const http = new XMLHttpRequest();
-            http.open("GET", window.location.origin + "/new_item/" + JSON.stringify(new_item_data) + "/" + JSON.stringify(document.getElementById("item_image").src));
-            http.send();
+            document.getElementById("items_id").value = "new_item";
+            item_select(document.getElementById("items_id"));
+        
+        } else {
+
+            var edir_item_data = new FormData();
+            edir_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            edir_item_data.append('name', document.getElementById("item_name").value);
+            edir_item_data.append('description', document.getElementById("item_description").value);
+            edir_item_data.append('price', document.getElementById("item_price").value);
+            edir_item_data.append('image', document.getElementById("item_photo").files[0]);
+            edir_item_data.append('group_id', document.getElementById("item_group").value);
+            edir_item_data.append('is_active', activeHandler(document.getElementById("item_active").checked));
+            
+            $.ajax({
+            url: window.location.origin + '/edit_item',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: edir_item_data,
+            });
+
+            document.getElementById("items_id").value = "new_item";
+            item_select(document.getElementById("items_id"));
         }
     }
 

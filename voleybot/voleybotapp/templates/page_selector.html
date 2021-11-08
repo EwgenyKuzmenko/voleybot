@@ -1,12 +1,11 @@
 <form>
-    <button type="button" id="orders" onclick="button_click(this)">{{local.2}}</button>
-    <button type="button" id="items" onclick="button_click(this)">{{local.3}}</button>
-    <button type="button" id="menu" onclick="button_click(this)">{{local.4}}</button>
+    <button type="button" id="orders" onclick="button_click(this)"></button>
+    <button type="button" id="items" onclick="button_click(this)"></button>
+    <button type="button" id="menu" onclick="button_click(this)"></button>
 </form>
 
 <script>
     function button_click(button) {
-        var language_code = document.getElementById("languages_id").value;
-        document.location.href = "/" + language_code + "/" + button.id;
+        document.location.href = "/" + button.id;
 }
 </script>
