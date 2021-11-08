@@ -9,8 +9,6 @@
     </tr>
 </table>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
 <script>
 
     function item_select(obj) {
@@ -57,14 +55,6 @@
         }
     }
 
-    function activeHandler(boolean_value) {
-        if (boolean_value === true) {
-            return "True";
-        } else {
-            return "False";
-        }
-    }
-    
     function check_save_button() {
         if (document.getElementById("item_name").value != "" && document.getElementById("item_price").value != "") {
             document.getElementById("save_button").disabled = false;
@@ -91,7 +81,7 @@
             new_item_data.append('price', document.getElementById("item_price").value);
             new_item_data.append('image', document.getElementById("item_photo").files[0]);
             new_item_data.append('group_id', document.getElementById("item_group").value);
-            new_item_data.append('is_active', activeHandler(document.getElementById("item_active").checked));
+            edit_item_data.append('is_active', document.getElementById("item_active").checked === true?"True":"False");
             
             $.ajax({
             url: window.location.origin + '/new_item',
@@ -107,22 +97,22 @@
         
         } else {
 
-            var edir_item_data = new FormData();
-            edir_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-            edir_item_data.append('name', document.getElementById("item_name").value);
-            edir_item_data.append('description', document.getElementById("item_description").value);
-            edir_item_data.append('price', document.getElementById("item_price").value);
-            edir_item_data.append('image', document.getElementById("item_photo").files[0]);
-            edir_item_data.append('group_id', document.getElementById("item_group").value);
-            edir_item_data.append('is_active', activeHandler(document.getElementById("item_active").checked));
-            
+            var edit_item_data = new FormData();
+            edit_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            edit_item_data.append('name', document.getElementById("item_name").value);
+            edit_item_data.append('description', document.getElementById("item_description").value);
+            edit_item_data.append('price', document.getElementById("item_price").value);
+            edit_item_data.append('image', document.getElementById("item_photo").files[0]);
+            edit_item_data.append('group_id', document.getElementById("item_group").value);
+            edit_item_data.append('is_active', document.getElementById("item_active").checked === true?"True":"False");
+
             $.ajax({
             url: window.location.origin + '/edit_item',
             type: 'POST',
             processData: false, // important
             contentType: false, // important
             dataType : 'json',
-            data: edir_item_data,
+            data: edit_item_data,
             });
 
             document.getElementById("items_id").value = "new_item";
@@ -131,6 +121,21 @@
     }
 
     function delete_button_click(button) {
-        alert(" ");
+        
+        var delete_item_data = new FormData();
+        delete_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        delete_item_data.append('name', document.getElementById("item_name").value);
+
+        $.ajax({
+            url: window.location.origin + '/delete_item',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: delete_item_data,
+            });
+
+        document.getElementById("items_id").value = "new_item";
+        item_select(document.getElementById("items_id"));
     }
 </script>

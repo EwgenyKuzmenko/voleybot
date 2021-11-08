@@ -37,14 +37,15 @@ def get_object(request, obj_type, filter_by):
     return HttpResponse(rv, content_type='application/json')
 
 def get_menu(request):
-    menu = api.get_menu()
-    return render(request, "topbar.html")
+    return render(request, "topbar.html", {"page": "menu", "languages": get_languages_strings()}) 
+    #return render(request, "menu/page.html", {"languages": get_languages_strings()})
 
 def get_orders(request):
     return render(request, "topbar.html")
 
 def get_items(request):
-    return render(request, "items/page.html", {"items": api._get_objects_("Item", {}), "languages": get_languages_strings()})
+    return render(request, "topbar.html", {"page": "items", "languages": get_languages_strings(), "items": api._get_objects_("Item", {})}) 
+    #return render(request, "items/page.html", {"items": api._get_objects_("Item", {}), "languages": get_languages_strings()})
 
 def make_item(request):
     
@@ -67,7 +68,9 @@ def edit_item(request):
     api.edit_item(edit_item_data, item_image)
     return(HttpResponse(status=200))
 
-def delete_item(request, item_name):
+def delete_item(request):
+
+    item_name = request.POST["name"]
 
     api.delete_item(item_name)
     return(HttpResponse(status=200))

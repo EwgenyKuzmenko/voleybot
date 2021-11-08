@@ -1,34 +1,64 @@
-<script>
-    function getCookie(name) {
-        var dc = document.cookie;
-        var prefix = name + "=";
-        var begin = dc.indexOf("; " + prefix);
-        if (begin == -1) {
-            begin = dc.indexOf(prefix);
-            if (begin != 0) return null;
-        }
-        else
-        {
-            begin += 2;
-            var end = document.cookie.indexOf(";", begin);
-            if (end == -1) {
-            end = dc.length;
-            }
-        }
-        // because unescape has been deprecated, replaced with decodeURI
-        //return unescape(dc.substring(begin + prefix.length, end));
-        return decodeURI(dc.substring(begin + prefix.length, end));
-    }
-</script>
+<html>
+    <head>
 
-<table style="width:100%">
-    <tr>
-        <td colspan="2">
-            {% include "page_selector.html" with local=local %}
-        </td>
-        <td align="right">
-            {% include "language_selector.html" with languages=languages %}
-        </td>
-    </tr>
-</table>
-<hr></hr>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            function getCookie(name) {
+                var dc = document.cookie;
+                var prefix = name + "=";
+                var begin = dc.indexOf("; " + prefix);
+                if (begin == -1) {
+                    begin = dc.indexOf(prefix);
+                    if (begin != 0) return null;
+                }
+                else
+                {
+                    begin += 2;
+                    var end = document.cookie.indexOf(";", begin);
+                    if (end == -1) {
+                    end = dc.length;
+                    }
+                }
+                // because unescape has been deprecated, replaced with decodeURI
+                //return unescape(dc.substring(begin + prefix.length, end));
+                return decodeURI(dc.substring(begin + prefix.length, end));
+            }
+
+            function language_change(page) {
+
+                language_code = document.getElementById("languages_id").value;
+
+                url_string = window.location.origin + "/get_text/" + language_code;
+                $.getJSON(url_string, function(data, jqXHR){ 
+                    
+                    document.getElementById("orders").innerText=data[2].fields.text;
+                    document.getElementById("items").innerText = data[3].fields.text;
+                    document.getElementById("menu").innerText = data[4].fields.text;
+                    
+                    try {
+                    document.getElementById("new_item").innerText = data[5].fields.text;
+                    document.getElementById("name_string").innerText = data[7].fields.text;
+                    document.getElementById("description_string").innerText = data[8].fields.text;
+                    document.getElementById("price_string").innerText = data[9].fields.text;
+                    document.getElementById("photo_string").innerText = data[10].fields.text;
+                    document.getElementById("group_string").innerText = data[11].fields.text;
+                    document.getElementById("qrcode_string").innerText = data[12].fields.text;
+                    document.getElementById("active_string").innerText = data[13].fields.text;
+                    document.getElementById("save_button").innerText = data[6].fields.text;
+                    document.getElementById("delete_button").innerText = data[14].fields.text;
+                    } catch(e) {console.log(e)}
+                }
+                );                
+            }
+        </script>
+    </head>
+    
+    <body onload="language_change()">
+        {% include "header.html" with languages=languages language_code=language_code%}
+        {% if page == "items" %}
+            {% include "./items/page.html" with items=items %}
+        {% elif page == "menu" %}
+            {% include "./menu/page.html" %}
+        {% endif %}
+    </body>
+</html>

@@ -11,6 +11,7 @@ urlpatterns = [
     path('items', views.get_items, name="items"),
     path('new_item', views.make_item, name="new_item"),
     path('edit_item', views.edit_item, name="edit_item"),
+    path('delete_item', views.delete_item, name="delete_item"),
     path('get_obj/<str:obj_type>/<str:filter_by>', views.get_object, name="get_item"),
     path('get_text/<str:language_code>', views.get_all_strings, name="get_text")
 ]
