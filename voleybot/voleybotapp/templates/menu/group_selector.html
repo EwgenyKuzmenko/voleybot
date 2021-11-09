@@ -1,0 +1,101 @@
+<table style="width:100%">
+    <tr>
+        <td>
+            <div align="left">
+                <select id="group_select" value="new_group" onchange="group_select(this)">
+                    <option id="new_group" value="new_group" selected></option>
+                    {% for group in groups %}
+                        <option id={{group.id}} value={{group.id}}>{{group.name}}</option>
+                    {% endfor %}
+                </select>  
+                <input id="group_name" type="text"></input>
+                <button id="save_button" onclick="save_button_click(this)"></button>
+            </div>
+        </td>
+            <td align="right">
+            <button id="delete_button" onclick="delete_button_click(this)"></button>
+        </td>
+    </tr>
+</table>
+
+<script>
+
+    function group_select(obj) {
+        
+        url_string = window.location.origin + "/get_obj/Group/" + "{'id': '" + obj.value + "'}";
+        
+        if (obj.value != "new_group") {
+            $.getJSON(url_string, function(data, jqXHR){ 
+                document.getElementById("group_name").value = data[0].fields.name;
+            });
+        
+        } else {
+            language_change(this);
+        }
+        
+    }
+
+    function save_button_click(obj) {
+
+        if (document.getElementById("group_select").value == "new_group") {
+            var new_group_data = new FormData();
+            new_group_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            new_group_data.append('name', document.getElementById("group_name").value);
+
+            $.ajax({
+                url: window.location.origin + '/new_group',
+                type: 'POST',
+                processData: false, // important
+                contentType: false, // important
+                dataType : 'json',
+                data: new_group_data,
+                async: false,
+                });
+
+            reload_page()
+
+            } else {
+            
+            var edit_data = new FormData();
+            edit_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            edit_data.append('id', document.getElementById("group_select").value);
+            edit_data.append('name', document.getElementById("group_name").value);
+
+            $.ajax({
+                url: window.location.origin + '/edit_group',
+                type: 'POST',
+                processData: false, // important
+                contentType: false, // important
+                dataType : 'json',
+                data: edit_data,
+                async: false,
+                });
+
+            reload_page()
+            
+        }
+
+    }
+
+    function delete_button_click(obj) {
+        
+        var delete_data = new FormData();
+        delete_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        delete_data.append('id', document.getElementById("group_select").value);
+        delete_data.append('name', document.getElementById("group_name").value);
+
+        $.ajax({
+            url: window.location.origin + '/delete_group',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: delete_data,
+            async: false,
+            });
+
+        reload_page()
+            
+    }
+
+</script>

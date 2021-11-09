@@ -1,3 +1,4 @@
+from django.http.response import HttpResponse
 from voleybotapp import models
 import tg_bot as tg
 
@@ -50,7 +51,7 @@ def edit_user_language(user_id, language_id):
     user_obj = _get_objects_("Customer", {"id": tel_obj.core_db_id})[0]
     _edit_object_(user_obj, "language_code", language_id)
 
-def make_item(item_data, image):
+def _make_item_(item_data, image):
 
     new_item_obj = _make_object_("Item", item_data)[0]
     new_item_qr_code = generate_qr_code()
@@ -63,31 +64,30 @@ def make_item(item_data, image):
 
     tg.return_to_main_page()
 
-def edit_item(item_data, image):
+def _edit_item_(item_data, image):
     
-    item_data["group_id"] = 1
+    item_obj = _get_objects_("Item", {"id": item_data["id"]})[0]
 
-    item_obj = _get_objects_("Item", {"name": item_data["name"]})[0]
-
-    edit_item_image(item_obj.id, image)
+    if (new_image_path := edit_item_image(item_obj.id, image)) != "":
+        _edit_object_(item_obj, "image_path", new_image_path)
 
     for k, v in item_data.items():
         _edit_object_(item_obj, k, v)
     
     edit_item_price(item_obj)
-
     if not item_obj.is_active: 
         delete_item_from_cart("all", item_obj, "all")
-    
+    edit_item_group(item_obj)
+
     tg.return_to_main_page()
 
-def delete_item(item_name):
+def _delete_item_(item_name):
     
     item_obj = _get_objects_("Item", {"name": item_name})[0]
 
     edit_item_price(item_obj)   
     delete_item_from_cart("all", item_obj, "all")
-    delete_item_from_group(item_obj)
+    delete_item_from_group(_get_objects_("Group", {"id": item_obj.group_id}), item_obj)
     _delete_object_(item_obj)
 
     tg.return_to_main_page()
@@ -99,6 +99,7 @@ def edit_item_image(item_id, image):
         with open(file_address, 'wb+') as destination:
             for chunk in image.chunks():
                 destination.write(chunk)
+    
     except:
         file_address = ""
 
@@ -112,39 +113,70 @@ def edit_item_price(item):
             cart_obj = _get_objects_("Cart", {"id": cart_id})[0]
             _edit_object_(cart_obj, "total", calculate_cart_total(cart_obj))
 
+def edit_item_group(item):
+
+    correct_group_id = item.group_id
+
+    for group in _get_objects_("Group", {}):
+        if (f"{item.id};" in group.items_ids):
+            delete_item_from_group(group, item)
+    
+    _edit_object_(item, "group_id", correct_group_id)
+
+    for group in _get_objects_("Group", {}):
+        if (f"{item.id};" not in group.items_ids) and (str(item.group_id) == str(group.id)):
+            add_item_to_group(group, item)
+
 def add_item_to_group(group, item):
-    pass
+    _edit_object_(group, "items_ids", f"{group.items_ids}{item.id};")
+    _edit_object_(item, "group_level", len(_get_objects_("Item", {"group_id": item.group_id})))
+    _edit_object_(item, "group_id", group.id)
 
-def delete_item_from_group(item):
-    
-    group_obj = _get_objects_("Group", {"id": item.group_id})[0]
-    
-    for item_id in group_obj.items_ids.split(";"):
-        item_obj = _get_objects_("Item", {"id": item_id})[0]
-        move_position("Item", item_obj, "up")
+def delete_item_from_group(group, item):
 
-    _edit_object_(group_obj, "items_ids", group_obj.items_ids.replace(f"{item.id};", ""))
+    new_values=group.items_ids.replace(f"{item.id};", "")
+    _edit_object_(group, "items_ids", new_values)
     _edit_object_(item, "group_id", 0)
     _edit_object_(item, "group_level", 0)
+          
+    for item_id in group.items_ids.split(";"):
+        if item_id:
+            item_obj = _get_objects_("Item", {"id": item_id})[0]
+            move_position("Item", {"group_id": item_obj.group_id}, int(item_obj.group_level), "up")
 
-def move_position(obj_type, obj, direction):
+    #if ";" not in group.items_ids: 
+    #    _delete_object_(group)
+
+def make_group(group_name):
+    _make_object_("Group", {"name": group_name, "level": len(_get_objects_("Group", {}))+1})
+
+def move_position(obj_type, ref, mark, direction):
     
     if obj_type == "Item":
-        ref = {"filter_by": {"group_id": obj.group_id}, "attr_name": "group_level"}
+        attr_name = "group_level"
     elif obj_type == "Group":
-        ref = {"filter_by": {}, "attr_name": "level"}
+        attr_name = "level"
 
-    obj_attr = getattr(obj, ref["attr_name"])
-
-    for another_obj in _get_objects_(obj_type, ref["filrer_by"]):
-
-        another_obj_attr = getattr(another_obj, ref["attr_name"])
-
-        if direction == "up" and another_obj_attr > obj_attr:
-            setattr(obj, ref["attr_name"], obj_attr - 1)
+    for obj in _get_objects_(obj_type, ref):
         
-        elif direction == "down" and another_obj_attr > obj_attr:
-            setattr(obj, ref["attr_name"], obj_attr + 1)
+        obj_attr = getattr(obj, attr_name)
+        
+        if direction == "up" and obj_attr > mark:
+            _edit_object_(obj, attr_name, obj_attr - 1)
+
+        elif direction == "down" and obj_attr < mark:
+            _edit_object_(obj, attr_name, obj_attr + 1)
+
+def delete_group(group):
+    
+    for item_id in group.items_ids:
+        if item_id:
+            item_obj = _get_objects_("Item", {"id": item_id})[0]
+            delete_item_from_group(group, item_obj)
+
+    move_position("Group", {}, int(group.level), "up")
+
+    _delete_object_(group)
 
 def add_item_to_cart(cart, item):
     pass

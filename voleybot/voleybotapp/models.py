@@ -29,7 +29,7 @@ class Item(models.Model):
 class Group(models.Model):
     
     name = models.CharField(unique=True, max_length=128)
-    level = models.IntegerField(unique=True)
+    level = models.IntegerField(default=1)
     items_ids = models.CharField(max_length=5096, blank=True) 
 
 class Cart(models.Model):

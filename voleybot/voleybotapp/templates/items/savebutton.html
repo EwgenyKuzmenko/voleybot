@@ -42,12 +42,11 @@
                 });
 
                 document.getElementById("item_name").value = data[0].fields.name;
-                document.getElementById("item_name").disabled = data[0].fields.name;
-
                 document.getElementById("item_description").value = data[0].fields.description;
                 document.getElementById("item_price").value = data[0].fields.price;
                 document.getElementById("item_image").src = data[0].fields.image_path;
                 document.getElementById("item_active").checked = data[0].fields.is_active;
+                document.getElementById("item_group").value = data[0].fields.group_id
             });
 
             check_save_button();
@@ -76,12 +75,13 @@
         {
             var new_item_data = new FormData();
             new_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            new_item_data.append('id', document.getElementById("items_id").value);
             new_item_data.append('name', document.getElementById("item_name").value);
             new_item_data.append('description', document.getElementById("item_description").value);
             new_item_data.append('price', document.getElementById("item_price").value);
             new_item_data.append('image', document.getElementById("item_photo").files[0]);
             new_item_data.append('group_id', document.getElementById("item_group").value);
-            edit_item_data.append('is_active', document.getElementById("item_active").checked === true?"True":"False");
+            new_item_data.append('is_active', document.getElementById("item_active").checked === true?"True":"False");
             
             $.ajax({
             url: window.location.origin + '/new_item',
@@ -90,15 +90,16 @@
             contentType: false, // important
             dataType : 'json',
             data: new_item_data,
+            async: false,
             });
 
-            document.getElementById("items_id").value = "new_item";
-            item_select(document.getElementById("items_id"));
-        
+            reload_page();
+            
         } else {
-
+            
             var edit_item_data = new FormData();
             edit_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            edit_item_data.append('id', document.getElementById("items_id").value);
             edit_item_data.append('name', document.getElementById("item_name").value);
             edit_item_data.append('description', document.getElementById("item_description").value);
             edit_item_data.append('price', document.getElementById("item_price").value);
@@ -113,10 +114,10 @@
             contentType: false, // important
             dataType : 'json',
             data: edit_item_data,
+            async: false,
             });
 
-            document.getElementById("items_id").value = "new_item";
-            item_select(document.getElementById("items_id"));
+            reload_page();
         }
     }
 
@@ -133,9 +134,9 @@
             contentType: false, // important
             dataType : 'json',
             data: delete_item_data,
+            async: false,
             });
 
-        document.getElementById("items_id").value = "new_item";
-        item_select(document.getElementById("items_id"));
+        reload_page()
     }
 </script>

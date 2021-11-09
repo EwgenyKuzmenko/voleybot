@@ -46,14 +46,43 @@
                     document.getElementById("active_string").innerText = data[13].fields.text;
                     document.getElementById("save_button").innerText = data[6].fields.text;
                     document.getElementById("delete_button").innerText = data[14].fields.text;
-                    } catch(e) {console.log(e)}
+                    } catch(e) {console.log(e)};
+                    
+                    try {
+                        document.getElementById("new_group").innerText = data[15].fields.text;
+                        document.getElementById("group_name").value = data[16].fields.text;
+                        document.getElementById("save_button").innerText = data[6].fields.text;
+                        document.getElementById("delete_button").innerText = data[17].fields.text;
+                    } catch(e) {console.log(e)};
+
                 }
                 );                
             }
+
+            function load_function() {
+                language_change("None")
+
+                try{
+                    document.getElementById("items_id").value = "new_item";
+                    document.getElementById("new_item").selected = true;
+                    item_select(document.getElementById("items_id"))
+                } catch(e) {console.log(e)};
+
+                try{
+                    document.getElementById("group_select").value = "new_group";
+                    document.getElementById("new_group").selected = true;
+                    group_select(document.getElementById("group_select"))
+                } catch(e) {console.log(e)};
+            }
+
+            function reload_page() {
+                document.location.href = document.location.href;
+            }      
+
         </script>
     </head>
     
-    <body onload="language_change()">
+    <body onload="load_function()">
         {% include "header.html" with languages=languages language_code=language_code%}
         {% if page == "items" %}
             {% include "./items/page.html" with items=items %}
