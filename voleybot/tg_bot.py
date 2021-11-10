@@ -1,38 +1,35 @@
 import os
-from typing import Text
 import django
 
 import telebot
 from telebot import types
 
+global voleybot_
+
+#if __name__ == "__main__":
+    
+TOKEN = "1985672373:AAEGmI-gq9wqy1757HkWPt0b36gHQ9MBN5c"
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
+django.setup()
+
+import voleybotapp.api as api
+
+voleybot_ = telebot.TeleBot(TOKEN)
+
 # // Functions Start
 
-if __name__=="__main__":
+@voleybot_.callback_query_handler(func=lambda call:True)    
+def button_press(callback_data):
+
+    voleybot_.answer_callback_query(callback_data.id)
     
-    TOKEN = "1985672373:AAEGmI-gq9wqy1757HkWPt0b36gHQ9MBN5c"
+    button_data = callback_data.data.split("_")
+    button_obj = api._get_objects_("Button", {"id": button_data[1]})[0]
+    exec(button_obj.on_press_action)
 
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
-    django.setup()
-
-    import voleybotapp.api as api
-
-    voleybot_ = telebot.TeleBot(TOKEN)
-
-    voleybot_.polling(none_stop=True)
-    while True: pass
-
-    @voleybot_.callback_query_handler(func=lambda call:True)    
-    def button_press(callback_data):
-    
-        voleybot_.answer_callback_query(callback_data.id)
-        
-        button_data = callback_data.data.split("_")
-        button_obj = api._get_objects_("Button", {"id": button_data[1]})[0]
-        exec(button_obj.on_press_action)
-
-
-    @voleybot_.message_handler(commands=['start',])
-    def start(meta):
+@voleybot_.message_handler(commands=['start',])
+def start(meta):
 
         tel_user_object_list = api._get_objects_("TelUser", {"tel_id": meta.from_user.id})
 
@@ -162,8 +159,12 @@ def show_user_cart(): pass
 def show_orders(): pass
 
 def return_to_main_page():
-    pass
-    #
-    #show_main_page()
+
+    for tg_user in api._get_objects_("TelUser", {}):
+        voleybot_.send_message(tg_user.tel_id, "test")
 
 # // Functions End
+
+if __name__ == "__main__":
+    voleybot_.polling(none_stop=True)
+    while True: pass

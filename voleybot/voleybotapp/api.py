@@ -148,7 +148,7 @@ def delete_item_from_group(group, item):
     for item_id in group.items_ids.split(";"):
         if item_id:
             item_obj = _get_objects_("Item", {"id": item_id})[0]
-            if item_obj.group_level >= original_group_level:
+            if item_obj.group_level > original_group_level:
                 move_position(item_obj, "Item", {"group_id": item_obj.group_id}, int(item_obj.group_level), "up")
 
     #if ";" not in group.items_ids: 
@@ -165,29 +165,35 @@ def move_position(obj_, obj_type, ref, mark, direction):
     elif obj_type == "Group":
         attr_name = "level"
 
-    print(obj_, obj_type, ref, mark, direction)
-
     if direction == "up" and mark > 1:
         
-        above = _get_objects_(obj_type, {**ref, attr_name: mark-1})[0]
-        _edit_object_(above, attr_name, mark)
-        _edit_object_(obj_, attr_name, mark-1)
+        try:
+            above = _get_objects_(obj_type, {**ref, attr_name: mark-1})[0]
+            _edit_object_(above, attr_name, mark)
+        except:
+            pass
+        finally:
+            _edit_object_(obj_, attr_name, mark-1)
     
     elif direction == "down" and mark < len(_get_objects_(obj_type, ref)):
         
-        below = _get_objects_(obj_type, {**ref, attr_name: mark+1})[0]
-        _edit_object_(below, attr_name, mark)
-        _edit_object_(obj_, attr_name, mark+1)
+        try:
+            below = _get_objects_(obj_type, {**ref, attr_name: mark+1})[0]
+            _edit_object_(below, attr_name, mark)
+        except:
+            pass
+        finally:
+            _edit_object_(obj_, attr_name, mark+1)
 
 def delete_group(group):
     
-    for item_id in group.items_ids:
+    for item_id in group.items_ids.split(";"):
         if item_id:
             item_obj = _get_objects_("Item", {"id": item_id})[0]
             delete_item_from_group(group, item_obj)
 
     for group_ in _get_objects_("Group", {}):
-        if group_.level >= group.level:
+        if group_.level > group.level:
             move_position(group_, "Group", {}, int(group.level), "up")
 
     _delete_object_(group)
