@@ -29,14 +29,12 @@ def get_object(request, obj_type, filter_by):
     
     obj = api._get_objects_(obj_type, eval(filter_by))
     
-    if obj_type == "Group": print(obj[0].name, str(filter_by))
-
     rv = serializers.serialize('json', obj)
 
     return HttpResponse(rv, content_type='application/json')
 
 def get_menu(request):
-    return render(request, "index.html", {"page": "menu", "languages": get_languages_strings(), "groups": api._get_objects_("Group", {})}) 
+    return render(request, "index.html", {"page": "menu", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}, "group_level"), "groups": api._get_objects_("Group", {}, "level")}) 
 
 def get_orders(request):
     return render(request, "topbar.html")
@@ -90,4 +88,22 @@ def delete_group(request):
     group_obj = api._get_objects_("Group", {"id": request.POST["id"]})[0]
 
     api.delete_group(group_obj)
+    return(HttpResponse(status=200))
+
+def move_position(request):
+
+    obj_id = request.POST["id"]
+    obj_type = request.POST["type"]
+    direction = request.POST["direction"]
+
+    obj = api._get_objects_(obj_type, {"id": obj_id})[0]
+
+    if obj_type == "Item":
+        ref = {"group_id": obj.group_id}
+        mark = obj.group_level
+    else:
+        ref = {}
+        mark = obj.level
+    
+    api.move_position(obj, obj_type, ref, mark, direction)
     return(HttpResponse(status=200))

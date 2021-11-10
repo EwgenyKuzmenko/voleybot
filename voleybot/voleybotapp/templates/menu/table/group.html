@@ -1,0 +1,25 @@
+{% if ";" not in group.items_ids %}
+    <td>
+        <h3><s>{{group.name}}</s></h3>
+    </td>
+    <td align="left">
+        {% include "./buttons.html" with type="group" id=group.id %}
+    </td>
+{% else %}
+    <td>
+        <h3>{{group.name}}</h3>
+    </td>
+    <td align="left">
+        {% include "./buttons.html" with type="group" id=group.id %}
+    </td>
+    </tr>
+    <ul>
+        {% for item in items %}
+            {% if item.group_id == group.id %}
+                <tr>
+                    {% include "./item.html" with item=item %}
+                </tr>
+            {% endif %} 
+        {% endfor %}
+    </ul>
+{% endif %}

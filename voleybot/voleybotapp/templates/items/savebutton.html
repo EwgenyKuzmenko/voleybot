@@ -75,7 +75,6 @@
         {
             var new_item_data = new FormData();
             new_item_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-            new_item_data.append('id', document.getElementById("items_id").value);
             new_item_data.append('name', document.getElementById("item_name").value);
             new_item_data.append('description', document.getElementById("item_description").value);
             new_item_data.append('price', document.getElementById("item_price").value);

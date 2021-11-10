@@ -20,6 +20,8 @@ urlpatterns = [
     path('edit_group', views.edit_group, name="edit_group"),
     path('delete_group', views.delete_group, name="delete_group"),
 
+    path('move_position', views.move_position, name="move_position"),
+
     path('get_obj/<str:obj_type>/<str:filter_by>', views.get_object, name="get_item"),
     path('get_text/<str:language_code>', views.get_all_strings, name="get_text")
 ]

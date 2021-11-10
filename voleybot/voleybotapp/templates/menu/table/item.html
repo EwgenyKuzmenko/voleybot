@@ -1,0 +1,15 @@
+{% if item.is_active %}
+    <td>
+        <li>{{item.name}}</li>
+    </td>
+    <td align="left">
+        {% include "./buttons.html" with type="item" id=item.id %}
+    </td>
+{% else %}
+    <td>
+        <li><s>{{item.name}}</s></li>
+    </td>
+    <td align="left">
+        {% include "./buttons.html" with type="item" id=item.id %}
+    </td>
+{% endif %}

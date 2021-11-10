@@ -1,3 +1,4 @@
+from os import abort
 from django.http.response import HttpResponse
 from voleybotapp import models
 import tg_bot as tg
@@ -16,10 +17,11 @@ def _filter_data_(model_obj, data_dict, ignore_empty):
     rv = {k: v for k, v in data_dict.items() if (((k and v and v != "undefined") or ignore_empty) and hasattr(model_obj, k))}
     return rv
 
-def _get_objects_(model, filter_by):
+def _get_objects_(model, filter_by, order_by=None):
     
     filter_by = _filter_data_(getattr(models, model), filter_by, True)
-    return getattr(models, model).objects.filter(**filter_by)
+    if order_by is None: return getattr(models, model).objects.filter(**filter_by)
+    else: return getattr(models, model).objects.filter(**filter_by).order_by(order_by)
 
 def _make_object_(model, object_data, with_return=True):
 
@@ -61,6 +63,8 @@ def _make_item_(item_data, image):
     _edit_object_(new_item_obj, "qrcode_id", new_item_qr_code.id)
     _edit_object_(new_item_obj, "image_path", file_address)
     _edit_object_(new_item_qr_code, "item_id", new_item_obj.id)
+
+    edit_item_group(new_item_obj)
 
     tg.return_to_main_page()
 
@@ -134,6 +138,8 @@ def add_item_to_group(group, item):
 
 def delete_item_from_group(group, item):
 
+    original_group_level = item.group_level
+
     new_values=group.items_ids.replace(f"{item.id};", "")
     _edit_object_(group, "items_ids", new_values)
     _edit_object_(item, "group_id", 0)
@@ -142,30 +148,36 @@ def delete_item_from_group(group, item):
     for item_id in group.items_ids.split(";"):
         if item_id:
             item_obj = _get_objects_("Item", {"id": item_id})[0]
-            move_position("Item", {"group_id": item_obj.group_id}, int(item_obj.group_level), "up")
+            if item_obj.group_level >= original_group_level:
+                move_position(item_obj, "Item", {"group_id": item_obj.group_id}, int(item_obj.group_level), "up")
 
     #if ";" not in group.items_ids: 
     #    _delete_object_(group)
 
 def make_group(group_name):
-    _make_object_("Group", {"name": group_name, "level": len(_get_objects_("Group", {}))+1})
+    level = len(_get_objects_("Group", {}))
+    _make_object_("Group", {"name": group_name, "level": level+1})
 
-def move_position(obj_type, ref, mark, direction):
+def move_position(obj_, obj_type, ref, mark, direction):
     
     if obj_type == "Item":
         attr_name = "group_level"
     elif obj_type == "Group":
         attr_name = "level"
 
-    for obj in _get_objects_(obj_type, ref):
-        
-        obj_attr = getattr(obj, attr_name)
-        
-        if direction == "up" and obj_attr > mark:
-            _edit_object_(obj, attr_name, obj_attr - 1)
+    print(obj_, obj_type, ref, mark, direction)
 
-        elif direction == "down" and obj_attr < mark:
-            _edit_object_(obj, attr_name, obj_attr + 1)
+    if direction == "up" and mark > 1:
+        
+        above = _get_objects_(obj_type, {**ref, attr_name: mark-1})[0]
+        _edit_object_(above, attr_name, mark)
+        _edit_object_(obj_, attr_name, mark-1)
+    
+    elif direction == "down" and mark < len(_get_objects_(obj_type, ref)):
+        
+        below = _get_objects_(obj_type, {**ref, attr_name: mark+1})[0]
+        _edit_object_(below, attr_name, mark)
+        _edit_object_(obj_, attr_name, mark+1)
 
 def delete_group(group):
     
@@ -174,7 +186,9 @@ def delete_group(group):
             item_obj = _get_objects_("Item", {"id": item_id})[0]
             delete_item_from_group(group, item_obj)
 
-    move_position("Group", {}, int(group.level), "up")
+    for group_ in _get_objects_("Group", {}):
+        if group_.level >= group.level:
+            move_position(group_, "Group", {}, int(group.level), "up")
 
     _delete_object_(group)
 
