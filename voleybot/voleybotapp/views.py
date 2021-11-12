@@ -37,7 +37,35 @@ def get_menu(request):
     return render(request, "index.html", {"page": "menu", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}, "group_level"), "groups": api._get_objects_("Group", {}, "level")}) 
 
 def get_orders(request):
-    return render(request, "topbar.html")
+
+    orders_info = {}
+
+    for order in api._get_objects_("Order", {"is_active": "True"}):
+        
+        item_names = {}
+        item_names[str(order.id)] = {}
+
+        customer_obj = api._get_objects_("Customer", {"id": order.orderer_id})[0]
+        cart_obj = api._get_objects_("Cart", {"belongs_id": order.id})[0]
+        for item_id in cart_obj.items_ids.split(";"):
+            if item_id:
+                item_name = api._get_objects_("Item", {"id": item_id})[0].name
+                if str(item_id) not in item_names[str(order.id)].keys():
+                    item_names[str(order.id)][str(item_id)] = {}
+                    item_names[str(order.id)][str(item_id)]["name"] = item_name
+                    item_names[str(order.id)][str(item_id)]["quantity"] = 1
+                    item_names[str(order.id)][str(item_id)]["range"] = range(1)
+                else:
+                    item_names[str(order.id)][str(item_id)]["quantity"] += 1
+                    item_names[str(order.id)][str(item_id)]["range"] = range(item_names[str(order.id)][str(item_id)]["quantity"])
+
+        orders_info[str(order.id)] = {}
+        orders_info[str(order.id)]["first_name"] = customer_obj.name
+        orders_info[str(order.id)]["last_name"] = customer_obj.last_name
+        orders_info[str(order.id)]["total"] = cart_obj.total
+        orders_info[str(order.id)]["item_names"] = item_names
+
+    return render(request, "index.html", {"page": "orders", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}), "orders": api._get_objects_("Order", {"is_active": "True"}), "orders_info": orders_info}) 
 
 def get_items(request):
     return render(request, "index.html", {"page": "items", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}), "groups": api._get_objects_("Group", {})}) 

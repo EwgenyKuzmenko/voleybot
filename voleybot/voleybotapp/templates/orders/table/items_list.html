@@ -1,0 +1,11 @@
+<p>
+{% for k, v in order_info.item_names.items %}
+    {% if k == order.id|slugify %}
+        {% for k_, v_ in v.items %}    
+            {% for i in v_.range %}
+                <li><i>{{v_.name}}</i></li>
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+{% endfor %}
+</p>

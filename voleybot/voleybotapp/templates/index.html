@@ -54,14 +54,29 @@
                         document.getElementById("save_button").innerText = data[6].fields.text;
                         document.getElementById("delete_button").innerText = data[17].fields.text;
                     } catch(e) {console.log(e)};
+                    
+                    try{
+                        $('head').append('<meta http-equiv="refresh" content="30" />');
+                        names = document.getElementsByName("order-name");
+                        datetimes = document.getElementsByName("order-datetime")
+                        totals = document.getElementsByName("total_text");
+                        ready_buttons = document.getElementsByName("button_ready");
+                        cancel_buttons = document.getElementsByName("button_cancel");
+                        for (i=0; i < names.length; i++) {
+                            names[i].innerText = data[44].fields.text
+                            totals[i].innerText = data[43].fields.text
+                            datetimes[i].innerText = data[45].fields.text
+                            ready_buttons[i].innerText = data[46].fields.text
+                            cancel_buttons[i].innerText = data[47].fields.text
+                        }
+                    } catch(e) {console.log(e)}
 
                 }
                 );                
             }
 
             function load_function() {
-                language_change("None")
-
+                language_change("None");
                 try{
                     document.getElementById("items_id").value = "new_item";
                     document.getElementById("new_item").selected = true;
@@ -73,6 +88,7 @@
                     document.getElementById("new_group").selected = true;
                     group_select(document.getElementById("group_select"))
                 } catch(e) {console.log(e)};
+
             }
 
             function reload_page() {
@@ -88,6 +104,8 @@
             {% include "./items/page.html" with items=items %}
         {% elif page == "menu" %}
             {% include "./menu/page.html" %}
+        {% elif page == "orders" %}
+            {% include "./orders/page.html" with orders=orders %}
         {% endif %}
     </body>
 </html>

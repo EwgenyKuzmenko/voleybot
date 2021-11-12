@@ -39,13 +39,13 @@ def _edit_object_(object_to_edit, field_to_edit, new_value):
 def _delete_object_(object_to_be_deleted):   
     object_to_be_deleted.delete()
 
-def make_new_user(user_name, mode="obj"):
+def make_new_user(user_name, user_last_name):
     
-    user_obj = _make_object_("Customer", {"name": user_name})[0]
-    user_cart_obj = _make_object_("Cart", {"belongs_type": "Customer", "belongs_id": user_obj[0].id})
-    _edit_object_(user_obj, "cart_id", user_cart_obj[0].id)
+    user_obj = _make_object_("Customer", {"name": user_name, "last_name": user_last_name})[0]
+    user_cart_obj = _make_object_("Cart", {"belongs_type": "Customer", "belongs_id": user_obj.id})[0]
+    _edit_object_(user_obj, "cart_id", user_cart_obj.id)
 
-    return _get_objects_("Customer", {"name": user_name}, mode)
+    return _get_objects_("Customer", {"name": user_name})
 
 def edit_user_language(user_id, language_id):
 
@@ -199,29 +199,67 @@ def delete_group(group):
     _delete_object_(group)
 
 def add_item_to_cart(cart, item):
-    pass
+    
+    _edit_object_(cart, "items_ids", f"{cart.items_ids}{item.id};")
+    _edit_object_(cart, "total", calculate_cart_total(cart))
 
 def delete_item_from_cart(cart, item, quantity):
+    
     if cart == "all":
         carts = _get_objects_("Cart", {}) 
     else:
         carts = [cart,]
 
     for _cart_ in carts:
-        if f"{item.id};" in _cart_.items:
-            _edit_object_(_cart_, "items", _cart_.items.replace(f"{item.id};", "", (quantity if quantity is int else None)))
+        if f"{item.id};" in _cart_.items_ids:
+            if quantity: 
+                _edit_object_(_cart_, "items_ids", _cart_.items_ids.replace(f"{item.id};", "", (quantity if type(quantity) is int else len(_cart_.items_ids.split(";")))))
+            else:
+                _edit_object_(_cart_, "items_ids", _cart_.items_ids.replace(f"{item.id};", ""))
+
+        _edit_object_(cart, "total", calculate_cart_total(cart))
+
+    if cart == "all": tg.return_to_main_page()
+
+def clear_cart(cart):
+
+    _edit_object_(cart, "items_ids", ";")
+    _edit_object_(cart, "total", 0.00)
 
 def calculate_cart_total(cart):
     
     rv = 0.00
 
-    for item in cart.items.split(";"):
+    for item in cart.items_ids.split(";"):
         try:
-            rv += _get_objects_("Item", {"id": item, "is_active": True})[0].price
-        except:
+            rv += float(_get_objects_("Item", {"id": item, "is_active": "True"})[0].price)
+        except Exception as e:
+            print(e)
             continue
 
     return rv
+
+def make_order(user):
+    
+    user_cart = _get_objects_("Cart", {"belongs_type": "Customer", "belongs_to": user.id})[0]
+    new_order_obj = _make_object_("Order", {"orderer_id": user.id, "cart_id": user_cart.id, "status": "Being prepared"})[0]
+
+    _edit_object_(user_cart, "belongs_type", "Order")
+    _edit_object_(user_cart, "belongs_id", new_order_obj.id)
+
+    new_user_cart = _make_object_("Cart", {"belongs_id": user.id})[0]
+    
+    _edit_object_(user, "cart_id", new_user_cart.id)
+    _edit_object_(user, "orders_ids", f"{user.orders_ids}{new_order_obj.id};")
+
+def cancel_order(order):
+    pass
+
+def repeat_order(order):
+    pass
+
+def prepare_order(order):
+    pass
 
 def generate_qr_code():
 
