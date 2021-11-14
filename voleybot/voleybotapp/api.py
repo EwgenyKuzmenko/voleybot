@@ -27,9 +27,9 @@ def _make_object_(model, object_data, with_return=True):
 
     model_obj = getattr(models, model)
     object_data = _filter_data_(model_obj, object_data, False)
-    model_obj.objects.create(**object_data)
+    obj = model_obj.objects.create(**object_data)
     
-    if with_return: return _get_objects_(model, object_data) 
+    if with_return: return [obj, ] # added for compatibility from the times when I was using different function of creating objects that was returning a list and thus there were / are indexes after every call of this function 
 
 def _edit_object_(object_to_edit, field_to_edit, new_value):
     
@@ -256,7 +256,17 @@ def cancel_order(order):
     pass
 
 def repeat_order(order):
-    pass
+    
+    user_obj = _get_objects_("Customer", {"id": order.orderer_id})[0]
+
+    old_cart_obj = _get_objects_("Cart", {"belongs_type": "Order", "belongs_id": order.id})[0]
+    new_cart_obj = _make_object_("Cart", {"belongs_type": "Order", "items_ids": old_cart_obj.items_ids, "total": old_cart_obj.total})[0]
+
+    new_order_obj = _make_object_("Order", {"orderer_id": user_obj.id, "cart_id": new_cart_obj.id, "status": "Being prepared"})[0]
+
+    _edit_object_(new_cart_obj, "belongs_id", new_order_obj.id)
+
+    _edit_object_(user_obj, "orders_ids", f"{user_obj.orders_ids}{new_order_obj.id};")
 
 def prepare_order(order):
     pass

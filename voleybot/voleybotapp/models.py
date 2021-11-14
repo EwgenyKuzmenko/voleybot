@@ -44,7 +44,7 @@ class Order(models.Model):
     orderer_id = models.IntegerField(default=1)
     cart_id = models.IntegerField(default=1)
     datetime = models.DateTimeField(default=django.utils.timezone.now)
-    status = models.CharField(max_length=128, default="Getting ready")
+    status = models.CharField(max_length=128, default="Being prepared")
 
 class QRCode(models.Model):
     

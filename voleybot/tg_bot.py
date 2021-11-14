@@ -212,6 +212,13 @@ def return_to_main_page():
         time.sleep(3)
         show_keyboard(tg_user.tel_id, 2)
 
+def edit_user_language(language_text, user_id):
+    
+    string_obj = api._get_objects_("TextString", {"text": language_text})[0]
+    language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
+    api.edit_user_language(user_id, language_obj.code)
+    show_keyboard(user_id, 2)
+
 def show_menu(user_id):
 
     for group in api._get_objects_("Group", {}, "level"):
@@ -372,26 +379,17 @@ def make_order(user_id):
 
     api.make_order(customer_obj)
 
-    #order_obj = api._get_objects_("Order", {"id": customer_obj.orders_ids.split(";")[-2]})[0]
     show_keyboard(user_id, 8)
 
 def repeat_order(user_id, order_id):
     
-    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
-    customer_obj = api._get_objects_("Customer", {"id": user_obj.core_db_id})[0]
-    previous_cart_obj = api._get_objects_('Cart', {"id": customer_obj.cart_id})[0]
+    #user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
+    #customer_obj = api._get_objects_("Customer", {"id": user_obj.core_db_id})[0]
+    order_obj = api._get_objects_("Order", {"id": order_id})[0]
 
-    new_cart_obj = api._make_object_("Cart", {"items_ids": previous_cart_obj.items_ids, "total": previous_cart_obj.total})[0]
-    api._edit_object_(customer_obj, "cart_id", new_cart_obj.id)
+    api.repeat_order(order_obj)
 
-    api.make_order(customer_obj)
     show_keyboard(user_id, 8)
-
-    temp_cart_obj = api._get_objects_("Cart", {"id": customer_obj.cart_id})[0]
-    api._delete_object_(temp_cart_obj)    
-    api._edit_object_(customer_obj, "cart_id", previous_cart_obj.id)
-    api._edit_object_(previous_cart_obj, "belongs_type", "Customer")
-    api._edit_object_(previous_cart_obj, "belongs_id", customer_obj.id)
 
 def cancel_order(user_id):
     pass
