@@ -36,6 +36,10 @@
                     document.getElementById("menu").innerText = data[4].fields.text;
                     
                     try {
+                        $('meta[http-equiv=refresh]').remove();
+                    } catch(e) {console.log(e)};
+
+                    try {
                     document.getElementById("new_item").innerText = data[5].fields.text;
                     document.getElementById("name_string").innerText = data[7].fields.text;
                     document.getElementById("description_string").innerText = data[8].fields.text;

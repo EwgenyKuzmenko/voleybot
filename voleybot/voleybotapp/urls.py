@@ -22,6 +22,9 @@ urlpatterns = [
 
     path('move_position', views.move_position, name="move_position"),
 
+    path('order_ready', views.order_ready, name="order_ready"),
+    path('order_cancelled', views.order_cancelled, name="order_cancelled"),
+
     path('get_obj/<str:obj_type>/<str:filter_by>', views.get_object, name="get_item"),
     path('get_text/<str:language_code>', views.get_all_strings, name="get_text")
 ]

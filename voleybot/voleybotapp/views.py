@@ -135,3 +135,21 @@ def move_position(request):
     
     api.move_position(obj, obj_type, ref, mark, direction)
     return(HttpResponse(status=200))
+
+def order_ready(request):
+
+    order_id = request.POST["id"]
+    order_obj = api._get_objects_("Order", {"id": order_id})[0]
+
+    api.prepare_order(order_obj)
+
+    return(HttpResponse(status=200))
+
+def order_cancelled(request):
+    
+    order_id = request.POST["id"]
+    order_obj = api._get_objects_("Order", {"id": order_id})[0]
+
+    api.cancel_order(order_obj)
+
+    return(HttpResponse(status=200))

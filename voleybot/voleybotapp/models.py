@@ -79,6 +79,7 @@ class TelUser(models.Model):
     tel_id = models.IntegerField(unique=True)
     core_db_id = models.IntegerField(unique=True)
     message_history = models.CharField(max_length=65536, blank=True)
+    qr_code = models.IntegerField(default=0)
 
 class Button(models.Model):
 

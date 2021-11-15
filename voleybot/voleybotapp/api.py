@@ -230,12 +230,13 @@ def calculate_cart_total(cart):
     
     rv = 0.00
 
-    for item in cart.items_ids.split(";"):
-        try:
-            rv += float(_get_objects_("Item", {"id": item, "is_active": "True"})[0].price)
-        except Exception as e:
-            print(e)
-            continue
+    for item_id in cart.items_ids.split(";"):
+        if item_id:
+            try:
+                rv += float(_get_objects_("Item", {"id": item_id, "is_active": "True"})[0].price)
+            except Exception as e:
+                print(e)
+                continue
 
     return rv
 
@@ -253,7 +254,8 @@ def make_order(user):
     _edit_object_(user, "orders_ids", f"{user.orders_ids}{new_order_obj.id};")
 
 def cancel_order(order):
-    pass
+    _edit_object_(order, "status", "Cancelled")
+    tg.cancel_order(order)
 
 def repeat_order(order):
     
@@ -269,7 +271,9 @@ def repeat_order(order):
     _edit_object_(user_obj, "orders_ids", f"{user_obj.orders_ids}{new_order_obj.id};")
 
 def prepare_order(order):
-    pass
+    
+    _edit_object_(order, "status", "Ready")
+    tg.prepare_order(order)
 
 def generate_qr_code():
 
@@ -305,7 +309,10 @@ def read_qr_code(image):
     det=cv2.QRCodeDetector()
     val, pts, st_code=det.detectAndDecode(img)
 
-    if (res := len(_get_objects_("QRCode", {"value": val}))) != 1:
+    if (len(res:=_get_objects_("QRCode", {"value": val}))) == 0:
         return 0
-    else: 
-        return _get_objects_("Item", {"id": res[0].item_id})[0]
+    else:
+        if ((val) and ((item:=_get_objects_("Item", {"id": res[0].item_id})[0]).is_active)):
+            return item
+        else:
+            return 0 

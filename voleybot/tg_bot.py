@@ -24,8 +24,8 @@ voleybot_ = telebot.TeleBot(TOKEN)
 @voleybot_.callback_query_handler(func=lambda call:True)    
 def button_press(callback_data):
 
-    voleybot_.answer_callback_query(callback_data.id)
-    
+    voleybot_.answer_callback_query(callback_data.id) 
+
     button_data = callback_data.data.split("_")
     button_obj = api._get_objects_("Button", {"id": button_data[1]})[0]
     exec(button_obj.on_press_action)
@@ -47,10 +47,35 @@ def start_hander(meta):
 
 @voleybot_.message_handler(func=lambda message:True, content_types=["photo"])
 def image_handler(message):
-    pass
+    
+    tel_user_obj = api._get_objects_("TelUser", {"tel_id": message.from_user.id})[0]
+
+    if tel_user_obj.qr_code:
+    
+        raw = message.photo[2].file_id
+        name = f"./static/scanned/{raw}.png"
+        file_info = voleybot_.get_file(raw)
+        downloaded_file = voleybot_.download_file(file_info.file_path)
+        with open(name,'wb') as new_file:
+            new_file.write(downloaded_file)
+
+        if (res:=api.read_qr_code(name)) != 0:
+            add_message_to_history(tel_user_obj.tel_id, message.message_id)
+            api._edit_object_(tel_user_obj, "qr_code", 0)
+            add_item_to_cart(tel_user_obj.tel_id, res.id, 2)
+        
+        else:
+            add_message_to_history(tel_user_obj.tel_id, message.message_id)
+            show_keyboard(message.from_user.id, 13)
+
+    voleybot_.delete_message(message.from_user.id, message.message_id) # bug; for some reason auto-delete does not work through message history
 
 @voleybot_.message_handler(func=lambda message:True, content_types=["text", "audio", "voice", "video", "document"])
 def user_handler(message):
+    
+    tel_user_obj = api._get_objects_("TelUset", {"tel_id": message.from_user.id})[0]
+
+    api._edit_object_(tel_user_obj, "qr_code", 0)
     voleybot_.delete_message(message.from_user.id, message.message_id)
 
 def add_message_to_history(user_id, message_id):
@@ -240,6 +265,7 @@ def show_menu(user_id):
                         add_message_to_history(user_id, message.message_id)
                         name_sent = True
                     
+                    item_text = "\n".join(item_obj.name, f"<i>{item_obj.description}</i>", str(item_obj.price))
                     _keyboard = get_keyboard(user_id, 4)
                     _keyboard["text"] = item_obj.name
                     
@@ -247,8 +273,13 @@ def show_menu(user_id):
                     _keyboard["keyboard"] = _keyboard["keyboard"].replace(str_end, f'_{item_obj.id}{str_end}')
                     # the easiest way to deal with unicode characters
                     
-                    message_obj = voleybot_.send_message(user_id, _keyboard["text"], reply_markup=_keyboard["keyboard"])
-                    add_message_to_history(user_id, message_obj.message_id)
+                    try:
+                        photo = open(item_obj.image_path, "rb")
+                        photo_mess = voleybot_.send_photo(user_id, photo)
+                        add_message_to_history(user_id, photo_mess.message_id)
+                    finally:
+                        text_mess = voleybot_.send_message(user_id, _keyboard["text"], reply_markup=_keyboard["keyboard"], parse_mode="html")
+                        add_message_to_history(user_id, text_mess.message_id)
 
 def show_cart(user_id):
     
@@ -355,7 +386,7 @@ def delete_item_from_cart(user_id, item_id, quantity):
     mes = voleybot_.send_message(user_id, str_text)
     time.sleep(3)
     add_message_to_history(user_id, mes.message_id)
-    show_keyboard(user_id, 5)
+    show_keyboard(user_id, (5 if len(cart_obj.items_ids.split(";")) > 2 else 7))
 
 def clear_cart(user_id):
     
@@ -391,8 +422,15 @@ def repeat_order(user_id, order_id):
 
     show_keyboard(user_id, 8)
 
-def cancel_order(user_id):
-    pass
+def prepare_order(order):
+    
+    orderer = api._get_objects_("TelUser", {"core_db_id": order.orderer_id})[0]
+    show_keyboard(orderer.tel_id, 15)
+
+def cancel_order(order):
+
+    orderer = api._get_objects_("TelUser", {"core_db_id": order.orderer_id})[0]
+    show_keyboard(orderer.tel_id, 16)
 
 # // Functions End
 
