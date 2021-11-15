@@ -265,9 +265,9 @@ def show_menu(user_id):
                         add_message_to_history(user_id, message.message_id)
                         name_sent = True
                     
-                    item_text = "\n".join(item_obj.name, f"<i>{item_obj.description}</i>", str(item_obj.price))
+                    item_text = "\n".join((f"<b>{item_obj.name}</b>", f"<i>{item_obj.description}</i>", str(item_obj.price)))
                     _keyboard = get_keyboard(user_id, 4)
-                    _keyboard["text"] = item_obj.name
+                    _keyboard["text"] = item_text
                     
                     str_end = _keyboard["keyboard"][-5:]
                     _keyboard["keyboard"] = _keyboard["keyboard"].replace(str_end, f'_{item_obj.id}{str_end}')
