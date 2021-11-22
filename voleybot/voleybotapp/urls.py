@@ -6,7 +6,7 @@ from . import views
 
 urlpatterns = [
 
-    path("", RedirectView.as_view(url='items', permanent=False), name='index'),
+    path("", RedirectView.as_view(url='orders', permanent=False), name='index'),
 
     path('menu', views.get_menu, name="menu"),
     path("orders", views.get_orders, name="orders"),
@@ -21,6 +21,7 @@ urlpatterns = [
     path('delete_group', views.delete_group, name="delete_group"),
 
     path('move_position', views.move_position, name="move_position"),
+    path('edit_status', views.edit_status, name="edit_status"),
 
     path('order_ready', views.order_ready, name="order_ready"),
     path('order_cancelled', views.order_cancelled, name="order_cancelled"),

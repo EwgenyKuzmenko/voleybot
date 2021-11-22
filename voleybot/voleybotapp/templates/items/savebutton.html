@@ -22,7 +22,6 @@
             document.getElementById("item_image").src = '#';
             document.getElementById("item_group").value = '';
             document.getElementById("item_qrcode").src = '#';
-            document.getElementById("item_active").checked = false;
             check_save_button();
             check_delete_button();
         
@@ -45,7 +44,6 @@
                 document.getElementById("item_description").value = data[0].fields.description;
                 document.getElementById("item_price").value = data[0].fields.price;
                 document.getElementById("item_image").src = data[0].fields.image_path;
-                document.getElementById("item_active").checked = data[0].fields.is_active;
                 document.getElementById("item_group").value = data[0].fields.group_id
             });
 
@@ -80,7 +78,6 @@
             new_item_data.append('price', document.getElementById("item_price").value);
             new_item_data.append('image', document.getElementById("item_photo").files[0]);
             new_item_data.append('group_id', document.getElementById("item_group").value);
-            new_item_data.append('is_active', document.getElementById("item_active").checked === true?"True":"False");
             
             $.ajax({
             url: window.location.origin + '/new_item',
@@ -104,7 +101,6 @@
             edit_item_data.append('price', document.getElementById("item_price").value);
             edit_item_data.append('image', document.getElementById("item_photo").files[0]);
             edit_item_data.append('group_id', document.getElementById("item_group").value);
-            edit_item_data.append('is_active', document.getElementById("item_active").checked === true?"True":"False");
 
             $.ajax({
             url: window.location.origin + '/edit_item',

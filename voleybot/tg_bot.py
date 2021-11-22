@@ -1,6 +1,7 @@
+import secret
+
 import os
 import time
-from typing import overload
 import django
 
 import telebot
@@ -10,7 +11,7 @@ global voleybot_
 
 #if __name__ == "__main__":
     
-TOKEN = "1985672373:AAEGmI-gq9wqy1757HkWPt0b36gHQ9MBN5c"
+TOKEN = secret.tg_token
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
 django.setup()
@@ -73,7 +74,7 @@ def image_handler(message):
 @voleybot_.message_handler(func=lambda message:True, content_types=["text", "audio", "voice", "video", "document"])
 def user_handler(message):
     
-    tel_user_obj = api._get_objects_("TelUset", {"tel_id": message.from_user.id})[0]
+    tel_user_obj = api._get_objects_("TelUser", {"tel_id": message.from_user.id})[0]
 
     api._edit_object_(tel_user_obj, "qr_code", 0)
     voleybot_.delete_message(message.from_user.id, message.message_id)
@@ -232,10 +233,13 @@ def return_to_main_page():
         language_code = api._get_objects_("Customer", {"id": tg_user.core_db_id})[0].language_code
         text_string = api._get_objects_("TextString", {"str_id": 18, "language_code": language_code})[0].text
 
-        temp_mess = voleybot_.send_message(tg_user.tel_id, text_string)
-        add_message_to_history(tg_user.tel_id, temp_mess.message_id)
-        time.sleep(3)
-        show_keyboard(tg_user.tel_id, 2)
+        try:
+            temp_mess = voleybot_.send_message(tg_user.tel_id, text_string)
+            add_message_to_history(tg_user.tel_id, temp_mess.message_id)
+            time.sleep(3)
+            show_keyboard(tg_user.tel_id, 2)
+        except:
+            pass
 
 def edit_user_language(language_text, user_id):
     
@@ -246,7 +250,7 @@ def edit_user_language(language_text, user_id):
 
 def show_menu(user_id):
 
-    for group in api._get_objects_("Group", {}, "level"):
+    for group in api._get_objects_("Group", {"is_active": "True"}, "level"):
 
         name_sent = False
 
@@ -260,7 +264,7 @@ def show_menu(user_id):
                 if item_obj.is_active:
                     
                     if not name_sent:       
-                        message_text = f"\n<b>{group.name}</b>\n"
+                        message_text = f"- - - -\n<b>{group.name}</b>\n- - - -"
                         message = voleybot_.send_message(user_id, message_text , parse_mode="html")
                         add_message_to_history(user_id, message.message_id)
                         name_sent = True
@@ -329,11 +333,16 @@ def show_orders(user_id):
             
             order_obj = api._get_objects_("Order", {"id": order_id})[0]
             
-            if order_obj.status == "Being prepared": 
+            if order_obj.status == "0": 
                 _keyboard = get_keyboard(user_id, 10)
-            else:
+                order_status_str = api._get_objects_("TextString", {"lang_id": language_obj.id, "str_id": 58})[0].text
+            elif order_obj.status == "1":
                 _keyboard = get_keyboard(user_id, 11)
-
+                order_status_str = api._get_objects_("TextString", {"lang_id": language_obj.id, "str_id": 59})[0].text
+            elif order_obj.status == "2":
+                _keyboard = get_keyboard(user_id, 11)
+                order_status_str = api._get_objects_("TextString", {"lang_id": language_obj.id, "str_id": 60})[0].text
+                    
             cart_obj = api._get_objects_("Cart", {"id": order_obj.cart_id})[0]
             items_str = ""
             for item_id in cart_obj.items_ids.split(";"):
@@ -341,7 +350,7 @@ def show_orders(user_id):
                     item_obj = api._get_objects_("Item", {"id": item_id})[0]
                     items_str += f" * {item_obj.name}" + "\n"
  
-            str_text = str_obj.format(order_obj.id, str(order_obj.datetime).split(".")[0], "\n"*2, items_str, "\n", cart_obj.total, "\n", order_obj.status)
+            str_text = str_obj.format(order_obj.id, str(order_obj.datetime).split(".")[0], "\n"*2, items_str, "\n", cart_obj.total, "\n", order_status_str)
             _keyboard["text"] = str_text
  
             str_end = '"}'
@@ -366,7 +375,7 @@ def add_item_to_cart(user_id, item_id, coming_from, refresh="True"):
     mes = voleybot_.send_message(user_id, str_text)
     time.sleep(3)
     voleybot_.delete_message(user_id, mes.message_id)
-    
+
     if refresh == "True":
         delete_messages(user_id)
         show_keyboard(user_id, int(coming_from))
@@ -403,6 +412,10 @@ def clear_cart(user_id):
     add_message_to_history(user_id, mes.message_id)
     show_keyboard(user_id, 2)
 
+def add_addon_to_cart(): pass
+
+def delete_addon_from_cart(): pass
+
 def make_order(user_id):
 
     user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
@@ -425,12 +438,20 @@ def repeat_order(user_id, order_id):
 def prepare_order(order):
     
     orderer = api._get_objects_("TelUser", {"core_db_id": order.orderer_id})[0]
-    show_keyboard(orderer.tel_id, 15)
+    
+    try:
+        show_keyboard(orderer.tel_id, 15)
+    except:
+        pass
 
 def cancel_order(order):
 
     orderer = api._get_objects_("TelUser", {"core_db_id": order.orderer_id})[0]
-    show_keyboard(orderer.tel_id, 16)
+    
+    try:
+        show_keyboard(orderer.tel_id, 16)
+    except:
+        pass
 
 # // Functions End
 

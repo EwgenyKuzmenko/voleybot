@@ -14,6 +14,8 @@ from pathlib import Path
 
 import os
 
+import secret
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = '/static/'
@@ -22,10 +24,10 @@ STATIC_URL = '/static/'
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*gy^9#40@#qv(ww0twrtjxm+2#ms-4y-!z=)z&u+j(e#!dfff^'
+SECRET_KEY = secret.site_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = secret.site_debug_mode
 
 ALLOWED_HOSTS = []
 

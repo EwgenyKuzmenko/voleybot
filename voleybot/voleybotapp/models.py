@@ -26,17 +26,26 @@ class Item(models.Model):
     qrcode_id = models.IntegerField(default=1)
     image_path = models.CharField(max_length=1024, blank=True)
 
+class Addon(models.Model):
+
+    name = models.CharField(max_length=128)
+    belongs_to = models.IntegerField(default=1, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_active = models.BooleanField(default=True)
+
 class Group(models.Model):
     
     name = models.CharField(unique=True, max_length=128)
     level = models.IntegerField(default=1)
     items_ids = models.CharField(max_length=5096, blank=True) 
+    is_active = models.BooleanField(default=True)
 
 class Cart(models.Model):
     
     belongs_type = models.CharField(max_length=128, default="Customer")
     belongs_id =  models.IntegerField(default=1)
     items_ids = models.CharField(max_length=128, default=";")
+    addons_ids = models.CharField(max_length=1024, default=";")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
 class Order(models.Model):
@@ -44,7 +53,7 @@ class Order(models.Model):
     orderer_id = models.IntegerField(default=1)
     cart_id = models.IntegerField(default=1)
     datetime = models.DateTimeField(default=django.utils.timezone.now)
-    status = models.CharField(max_length=128, default="Being prepared")
+    status = models.CharField(max_length=128, default="0")
 
 class QRCode(models.Model):
     

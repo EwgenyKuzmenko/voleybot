@@ -26,7 +26,7 @@
 
             function language_change(page) {
 
-                language_code = document.getElementById("languages_id").value;
+                var language_code = document.getElementById("languages_id").value;
 
                 url_string = window.location.origin + "/get_text/" + language_code;
                 $.getJSON(url_string, function(data, jqXHR){ 
@@ -36,7 +36,10 @@
                     document.getElementById("menu").innerText = data[4].fields.text;
                     
                     try {
-                        $('meta[http-equiv=refresh]').remove();
+                        if (order_update_timer) {
+                            clearTimeout(order_update_timer);
+                            order_update_timer = null;
+                        }        
                     } catch(e) {console.log(e)};
 
                     try {
@@ -47,7 +50,6 @@
                     document.getElementById("photo_string").innerText = data[10].fields.text;
                     document.getElementById("group_string").innerText = data[11].fields.text;
                     document.getElementById("qrcode_string").innerText = data[12].fields.text;
-                    document.getElementById("active_string").innerText = data[13].fields.text;
                     document.getElementById("save_button").innerText = data[6].fields.text;
                     document.getElementById("delete_button").innerText = data[14].fields.text;
                     } catch(e) {console.log(e)};
@@ -60,7 +62,6 @@
                     } catch(e) {console.log(e)};
                     
                     try{
-                        //$('head').append('<meta http-equiv="refresh" content="30" />');
                         names = document.getElementsByName("order-name");
                         datetimes = document.getElementsByName("order-datetime")
                         totals = document.getElementsByName("total_text");
@@ -73,6 +74,8 @@
                             ready_buttons[i].innerText = data[46].fields.text
                             cancel_buttons[i].innerText = data[47].fields.text
                         }
+                        if (window.location.pathname == "/orders") 
+                        {var order_update_timer = setTimeout( 'location="/orders";', 30000 );}
                     } catch(e) {console.log(e)}
 
                 }
@@ -80,7 +83,9 @@
             }
 
             function load_function() {
+
                 language_change("None");
+                
                 try{
                     document.getElementById("items_id").value = "new_item";
                     document.getElementById("new_item").selected = true;

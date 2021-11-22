@@ -1,5 +1,3 @@
-from os import abort
-from django.http.response import HttpResponse
 from voleybotapp import models
 import tg_bot as tg
 
@@ -79,8 +77,7 @@ def _edit_item_(item_data, image):
         _edit_object_(item_obj, k, v)
     
     edit_item_price(item_obj)
-    if not item_obj.is_active: 
-        delete_item_from_cart("all", item_obj, "all")
+    edit_status(item_obj, "Item")
     edit_item_group(item_obj)
 
     tg.return_to_main_page()
@@ -91,7 +88,8 @@ def _delete_item_(item_name):
 
     edit_item_price(item_obj)   
     delete_item_from_cart("all", item_obj, "all")
-    delete_item_from_group(_get_objects_("Group", {"id": item_obj.group_id}), item_obj)
+    delete_item_from_group(_get_objects_("Group", {"id": item_obj.group_id})[0], item_obj)
+    
     _delete_object_(item_obj)
 
     tg.return_to_main_page()
@@ -103,7 +101,12 @@ def edit_item_image(item_id, image):
         with open(file_address, 'wb+') as destination:
             for chunk in image.chunks():
                 destination.write(chunk)
+            destination.seek(0)
     
+        original_image = cv2.imread(file_address)
+        resized_image = cv2.resize(original_image, (300, 500))
+        cv2.imwrite(file_address, resized_image)
+
     except:
         file_address = ""
 
@@ -111,10 +114,8 @@ def edit_item_image(item_id, image):
 
 def edit_item_price(item):
     
-    for cart_id in item.in_carts_ids.split(';'):
-        
-        if cart_id != item.in_carts_ids.split(';')[0]:
-            cart_obj = _get_objects_("Cart", {"id": cart_id})[0]
+    for cart_obj in _get_objects_("Cart", {}):
+        if f"{item.id};" in cart_obj.items_ids:
             _edit_object_(cart_obj, "total", calculate_cart_total(cart_obj))
 
 def edit_item_group(item):
@@ -130,6 +131,15 @@ def edit_item_group(item):
     for group in _get_objects_("Group", {}):
         if (f"{item.id};" not in group.items_ids) and (str(item.group_id) == str(group.id)):
             add_item_to_group(group, item)
+
+def edit_status(obj, obj_type):
+
+    _edit_object_(obj, "is_active", not obj.is_active)
+
+    if ((obj_type == "Item") and (not obj.is_active)): 
+        delete_item_from_cart("all", obj, "all")
+
+    tg.return_to_main_page()
 
 def add_item_to_group(group, item):
     _edit_object_(group, "items_ids", f"{group.items_ids}{item.id};")
@@ -150,9 +160,6 @@ def delete_item_from_group(group, item):
             item_obj = _get_objects_("Item", {"id": item_id})[0]
             if item_obj.group_level > original_group_level:
                 move_position(item_obj, "Item", {"group_id": item_obj.group_id}, int(item_obj.group_level), "up")
-
-    #if ";" not in group.items_ids: 
-    #    _delete_object_(group)
 
 def make_group(group_name):
     level = len(_get_objects_("Group", {}))
@@ -217,7 +224,7 @@ def delete_item_from_cart(cart, item, quantity):
             else:
                 _edit_object_(_cart_, "items_ids", _cart_.items_ids.replace(f"{item.id};", ""))
 
-        _edit_object_(cart, "total", calculate_cart_total(cart))
+        _edit_object_(_cart_, "total", calculate_cart_total(_cart_))
 
     if cart == "all": tg.return_to_main_page()
 
@@ -243,7 +250,7 @@ def calculate_cart_total(cart):
 def make_order(user):
     
     user_cart = _get_objects_("Cart", {"belongs_type": "Customer", "belongs_to": user.id})[0]
-    new_order_obj = _make_object_("Order", {"orderer_id": user.id, "cart_id": user_cart.id, "status": "Being prepared"})[0]
+    new_order_obj = _make_object_("Order", {"orderer_id": user.id, "cart_id": user_cart.id, "status": "0"})[0]
 
     _edit_object_(user_cart, "belongs_type", "Order")
     _edit_object_(user_cart, "belongs_id", new_order_obj.id)
@@ -254,7 +261,7 @@ def make_order(user):
     _edit_object_(user, "orders_ids", f"{user.orders_ids}{new_order_obj.id};")
 
 def cancel_order(order):
-    _edit_object_(order, "status", "Cancelled")
+    _edit_object_(order, "status", "2")
     tg.cancel_order(order)
 
 def repeat_order(order):
@@ -264,7 +271,7 @@ def repeat_order(order):
     old_cart_obj = _get_objects_("Cart", {"belongs_type": "Order", "belongs_id": order.id})[0]
     new_cart_obj = _make_object_("Cart", {"belongs_type": "Order", "items_ids": old_cart_obj.items_ids, "total": old_cart_obj.total})[0]
 
-    new_order_obj = _make_object_("Order", {"orderer_id": user_obj.id, "cart_id": new_cart_obj.id, "status": "Being prepared"})[0]
+    new_order_obj = _make_object_("Order", {"orderer_id": user_obj.id, "cart_id": new_cart_obj.id, "status": "0"})[0]
 
     _edit_object_(new_cart_obj, "belongs_id", new_order_obj.id)
 
@@ -272,7 +279,7 @@ def repeat_order(order):
 
 def prepare_order(order):
     
-    _edit_object_(order, "status", "Ready")
+    _edit_object_(order, "status", "1")
     tg.prepare_order(order)
 
 def generate_qr_code():

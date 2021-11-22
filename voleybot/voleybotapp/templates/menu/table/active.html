@@ -1,0 +1,37 @@
+<td>
+    <table>
+        <tr>
+            <td>
+                {% if active %}
+                    <input onchange="active_status_change(this)" id="{{checkbox_type}}_{{checkbox_id}}" type="checkbox" checked></input>
+                {% else %}
+                    <input onchange="active_status_change(this)" id="{{checkbox_type}}_{{checkbox_id}}" type="checkbox"></input>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</td>
+
+<script>
+    function active_status_change(checkbox) {
+
+        var values = checkbox.id.split("_");
+        
+        var active_data = new FormData();
+        active_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        active_data.append('type', values[0]);
+        active_data.append('id', values[1]);
+            
+        $.ajax({
+            url: window.location.origin + '/edit_status',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: active_data,
+            async: false,
+            });
+
+        reload_page();
+    }
+</script>

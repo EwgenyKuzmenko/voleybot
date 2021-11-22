@@ -40,7 +40,7 @@ def get_orders(request):
 
     orders_info = {}
 
-    for order in api._get_objects_("Order", {"is_active": "True"}):
+    for order in api._get_objects_("Order", {}):
         
         item_names = {}
         item_names[str(order.id)] = {}
@@ -65,7 +65,7 @@ def get_orders(request):
         orders_info[str(order.id)]["total"] = cart_obj.total
         orders_info[str(order.id)]["item_names"] = item_names
 
-    return render(request, "index.html", {"page": "orders", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}), "orders": api._get_objects_("Order", {"is_active": "True"}), "orders_info": orders_info}) 
+    return render(request, "index.html", {"page": "orders", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}), "orders": api._get_objects_("Order", {}), "orders_info": orders_info}) 
 
 def get_items(request):
     return render(request, "index.html", {"page": "items", "languages": get_languages_strings(), "items": api._get_objects_("Item", {}), "groups": api._get_objects_("Group", {})}) 
@@ -134,6 +134,16 @@ def move_position(request):
         mark = obj.level
     
     api.move_position(obj, obj_type, ref, mark, direction)
+    return(HttpResponse(status=200))
+
+def edit_status(request):
+    
+    obj_id = request.POST["id"]
+    obj_type = request.POST["type"]
+
+    obj = api._get_objects_(obj_type, {"id": obj_id})[0]
+    api.edit_status(obj, obj_type)
+
     return(HttpResponse(status=200))
 
 def order_ready(request):
