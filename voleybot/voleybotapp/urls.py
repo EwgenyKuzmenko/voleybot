@@ -15,6 +15,7 @@ urlpatterns = [
     path('new_item', views.make_item, name="new_item"),
     path('edit_item', views.edit_item, name="edit_item"),
     path('delete_item', views.delete_item, name="delete_item"),
+    path('edit_item_quantity', views.edit_item_quantity, name="edit_item_quantity"),
 
     path('new_group', views.make_group, name="new_group"),
     path('edit_group', views.edit_group, name="edit_group"),

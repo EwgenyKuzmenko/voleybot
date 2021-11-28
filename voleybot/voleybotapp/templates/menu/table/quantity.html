@@ -1,0 +1,30 @@
+<td>
+    <table>
+        <tr>
+            <td align="left">
+                <input id="quantity_{{id}}" type="text" value={{value}} min="0" maxlength="3" style="width: 3em" onchange="quantity_change(this)">
+            </td>
+        </tr>
+    </table>
+</td>
+
+<script>
+    function quantity_change(obj) {
+        
+        var quantity_data = new FormData();
+        quantity_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        quantity_data.append('id', obj.id.split("_")[1]);
+        quantity_data.append('value', obj.value);
+            
+        $.ajax({
+            url: window.location.origin + '/edit_item_quantity',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: quantity_data,
+            });
+
+        reload_page();
+    }
+</script>

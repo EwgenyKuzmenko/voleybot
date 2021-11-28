@@ -5,6 +5,7 @@
     <td align="left">
         {% include "./buttons.html" with type="item" id=item.id %}
         {% include "./active.html" with checkbox_type="Item" checkbox_id=item.id active=item.is_active %}
+        {% include "./quantity.html" with id=item.id value=item.quantity %}
     </td>
 {% else %}
     <td>
@@ -13,5 +14,6 @@
     <td align="left">
         {% include "./buttons.html" with type="item" id=item.id %}
         {% include "./active.html" with checkbox_type="Item" checkbox_id=item.id active=item.is_active %}
+        {% include "./quantity.html" with id=item.id value=item.quantity %}
     </td>
 {% endif %}

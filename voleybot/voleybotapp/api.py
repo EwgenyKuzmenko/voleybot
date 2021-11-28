@@ -132,14 +132,23 @@ def edit_item_group(item):
         if (f"{item.id};" not in group.items_ids) and (str(item.group_id) == str(group.id)):
             add_item_to_group(group, item)
 
-def edit_status(obj, obj_type):
+def edit_item_quantity(item, sign, param, delete_from_carts=True):
+    
+    old_quantity = item.quantity
+    new_quantity = eval(f"{item.quantity}{sign}{param}")
+    _edit_object_(item, "quantity", new_quantity)
+
+    if (new_quantity <= 0 and old_quantity > 0 and item.is_active) or (new_quantity > 0 and old_quantity <= 0 and not item.is_active):
+        edit_status(item, "Item", delete_from_carts)
+        
+    if item.quantity < 0: item.quantity = 0
+
+def edit_status(obj, obj_type, delete_from_carts=True):
 
     _edit_object_(obj, "is_active", not obj.is_active)
 
-    if ((obj_type == "Item") and (not obj.is_active)): 
+    if (delete_from_carts and (obj_type == "Item") and (not obj.is_active)): 
         delete_item_from_cart("all", obj, "all")
-
-    tg.return_to_main_page()
 
 def add_item_to_group(group, item):
     _edit_object_(group, "items_ids", f"{group.items_ids}{item.id};")
@@ -209,6 +218,7 @@ def add_item_to_cart(cart, item):
     
     _edit_object_(cart, "items_ids", f"{cart.items_ids}{item.id};")
     _edit_object_(cart, "total", calculate_cart_total(cart))
+    edit_item_quantity(item, "-", 1, False)
 
 def delete_item_from_cart(cart, item, quantity):
     
@@ -219,6 +229,11 @@ def delete_item_from_cart(cart, item, quantity):
 
     for _cart_ in carts:
         if f"{item.id};" in _cart_.items_ids:
+
+            new_quantity = max((quantity if type(quantity) is int else 0), _cart_.items_ids.count(f"{item.id};"))
+            print(new_quantity)
+            edit_item_quantity(item, "+", new_quantity)
+
             if quantity: 
                 _edit_object_(_cart_, "items_ids", _cart_.items_ids.replace(f"{item.id};", "", (quantity if type(quantity) is int else len(_cart_.items_ids.split(";")))))
             else:
@@ -230,7 +245,12 @@ def delete_item_from_cart(cart, item, quantity):
 
 def clear_cart(cart):
 
-    _edit_object_(cart, "items_ids", ";")
+    #_edit_object_(cart, "items_ids", ";")
+    for item_id in cart.items_ids.split(";"):
+        if item_id:
+            item_obj = _get_objects_("Item", {"id": item_id})[0]
+            delete_item_from_cart(cart, item_obj, "all")
+    
     _edit_object_(cart, "total", 0.00)
 
 def calculate_cart_total(cart):
@@ -274,7 +294,6 @@ def repeat_order(order):
     new_order_obj = _make_object_("Order", {"orderer_id": user_obj.id, "cart_id": new_cart_obj.id, "status": "0"})[0]
 
     _edit_object_(new_cart_obj, "belongs_id", new_order_obj.id)
-
     _edit_object_(user_obj, "orders_ids", f"{user_obj.orders_ids}{new_order_obj.id};")
 
 def prepare_order(order):

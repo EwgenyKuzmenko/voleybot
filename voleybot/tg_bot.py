@@ -308,9 +308,13 @@ def show_cart(user_id):
 
         item_obj = api._get_objects_("Item", {"id": k})[0]
 
-        _keyboard = get_keyboard(user_id, 6)
-        _keyboard["text"] = f"{item_obj.name} \n {item_obj.price} x {v}"
- 
+        if item_obj.is_active:
+            _keyboard = get_keyboard(user_id, 6)
+            _keyboard["text"] = f"{item_obj.name} \n {item_obj.price} x {v}"
+        else:
+            _keyboard = get_keyboard(user_id, 17)
+            _keyboard["text"] = f"{item_obj.name} \n {item_obj.price} x {v}"
+
         str_end = '"}'
         _keyboard["keyboard"] = _keyboard["keyboard"].replace(str_end, f'_{item_obj.id}{str_end}')
         # still easiest way to deal with unicode characters

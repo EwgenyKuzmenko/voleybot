@@ -34,13 +34,6 @@
                     document.getElementById("orders").innerText=data[2].fields.text;
                     document.getElementById("items").innerText = data[3].fields.text;
                     document.getElementById("menu").innerText = data[4].fields.text;
-                    
-                    try {
-                        if (order_update_timer) {
-                            clearTimeout(order_update_timer);
-                            order_update_timer = null;
-                        }        
-                    } catch(e) {console.log(e)};
 
                     try {
                     document.getElementById("new_item").innerText = data[5].fields.text;
@@ -74,17 +67,29 @@
                             ready_buttons[i].innerText = data[46].fields.text
                             cancel_buttons[i].innerText = data[47].fields.text
                         }
-                        if (window.location.pathname == "/orders") 
-                        {var order_update_timer = setTimeout( 'location="/orders";', 30000 );}
-                    } catch(e) {console.log(e)}
+                                            } catch(e) {console.log(e)}
 
                 }
                 );                
             }
 
+            function auto_update_orders(){
+                
+                try {
+                        if (order_update_timer) {
+                            clearTimeout(order_update_timer);
+                            order_update_timer = null;
+                        }        
+                    } catch(e) {console.log(e)};
+
+                if (window.location.pathname == "/orders") 
+                        {var order_update_timer = setTimeout( 'location="/orders";', 30000 );}
+            }
+
             function load_function() {
 
                 language_change("None");
+                auto_update_orders();
                 
                 try{
                     document.getElementById("items_id").value = "new_item";

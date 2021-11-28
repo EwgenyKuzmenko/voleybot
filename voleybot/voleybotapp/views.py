@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.core import serializers
 
 import voleybotapp.api as api
+import tg_bot as tg
 
 def get_languages_strings():
 
@@ -89,6 +90,15 @@ def edit_item(request):
 
     api._edit_item_(edit_item_data, item_image)
     return(HttpResponse(status=200))
+    
+def edit_item_quantity(request):
+
+    item_obj = api._get_objects_("Item", {"id": request.POST["id"]})[0]
+    quantity_value = int(request.POST["value"])
+
+    api.edit_item_quantity(item_obj, "+", quantity_value - item_obj.quantity)
+
+    return HttpResponse(status=200)
 
 def delete_item(request):
 
@@ -143,6 +153,8 @@ def edit_status(request):
 
     obj = api._get_objects_(obj_type, {"id": obj_id})[0]
     api.edit_status(obj, obj_type)
+    
+    tg.return_to_main_page()
 
     return(HttpResponse(status=200))
 

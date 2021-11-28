@@ -20,7 +20,6 @@
             document.getElementById("item_price").value = '';
             document.getElementById("item_photo").value = '';
             document.getElementById("item_image").src = '#';
-            document.getElementById("item_group").value = '';
             document.getElementById("item_qrcode").src = '#';
             check_save_button();
             check_delete_button();
@@ -86,7 +85,7 @@
             contentType: false, // important
             dataType : 'json',
             data: new_item_data,
-            async: false,
+            //async: false,
             });
 
             reload_page();
@@ -109,7 +108,7 @@
             contentType: false, // important
             dataType : 'json',
             data: edit_item_data,
-            async: false,
+            //async: false,
             });
 
             reload_page();
@@ -129,7 +128,7 @@
             contentType: false, // important
             dataType : 'json',
             data: delete_item_data,
-            async: false,
+            //async: false,
             });
 
         reload_page()

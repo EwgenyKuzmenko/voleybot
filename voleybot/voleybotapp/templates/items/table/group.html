@@ -7,7 +7,7 @@
             <td>
                 <select onchange="check_save_button()" id=item_group>
                     {% for group in groups %}
-                        <option id={{group.id}} value={{group.id}}>{{group.name}}</option>
+                        <option selected="selected" id={{group.id}} value={{group.id}}>{{group.name}}</option>
                     {% endfor %}
                 </select>
             </td>
