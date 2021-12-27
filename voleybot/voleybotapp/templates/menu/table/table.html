@@ -1,0 +1,7 @@
+{% for group in groups %}
+    <table>
+        <tr>
+            {% include "./group.html" with group=group items=items %}
+        </tr>
+    </table>
+{% endfor %}

@@ -1,0 +1,44 @@
+<button id={{order.id}} name="button_ready" onclick="button_ready(this)"></button>
+<button id={{order.id}} name="button_cancel" onclick="button_cancel(this)"></button>
+
+<script>
+
+    function button_ready(btn) {
+        
+        var order_ready_data = new FormData();
+            order_ready_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            order_ready_data.append('id', btn.id);
+
+        $.ajax({
+            url: window.location.origin + '/order_ready',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: order_ready_data,
+            //async: false,
+        });
+
+        reload_page()
+    }
+
+    function button_cancel(btn) {
+        
+        var order_cancelled_data = new FormData();
+            order_cancelled_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+            order_cancelled_data.append('id', btn.id);
+
+        $.ajax({
+            url: window.location.origin + '/order_cancelled',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: order_cancelled_data,
+            //async: false,
+        });
+
+        reload_page()
+    }
+
+</script>

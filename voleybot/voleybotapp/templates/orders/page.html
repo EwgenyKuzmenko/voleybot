@@ -1,0 +1,10 @@
+{% for order in orders reversed %}
+    {% if order.status == "0" %}
+        {% for k, v in orders_info.items %}
+            {% if k == order.id|slugify or k == order.id %}
+                {% include "./table/order.html" with order=order order_info=v %}
+            {% endif %}
+        {% endfor %}
+        <hr></hr>
+    {% endif %}
+{% endfor %}

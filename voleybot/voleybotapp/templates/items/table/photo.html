@@ -1,0 +1,30 @@
+<td>
+    <table>
+        <tr>
+            <td>
+                <div id="photo_string"></div>
+            </td>
+            <td>
+                <table>
+                     <tr>
+                         <td>
+                            <input onchange="check_save_button()" id="item_photo" name="item_photo" type="file" accept="image/*"></input>
+                         </td>
+                         <td>
+                            <img id="item_image" src="#" style="max-width:300"/>    
+                        </td>
+                     </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</td>
+
+<script>
+    item_photo.onchange = evt => {
+        const [file] = item_photo.files
+        if (file) {
+            item_image.src = URL.createObjectURL(file)
+        }
+    }
+</script>

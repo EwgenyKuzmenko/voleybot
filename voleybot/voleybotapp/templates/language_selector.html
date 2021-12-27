@@ -1,0 +1,5 @@
+<select name="languages_name" id="languages_id" onchange="language_change()">
+    {% for language in languages reversed %}
+        <option value={{language.0}}>{{language.1}}</option>
+    {% endfor %}
+</select>

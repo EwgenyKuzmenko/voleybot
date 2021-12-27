@@ -1,0 +1,35 @@
+<table>
+    <tr>
+        <td>
+            <button id="up_{{type}}_{{id}}" onclick="on_arrow_press(this)">↑</button>
+            <button id="down_{{type}}_{{id}}" onclick="on_arrow_press(this)">↓</button>
+        </td>
+    </tr>
+</table>
+
+<script>
+
+    function on_arrow_press(obj) {
+        
+        var values = obj.id.split("_");
+        
+        var move_data = new FormData();
+        move_data.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        move_data.append('direction', values[0]);
+        move_data.append('type', values[1]=='group'?"Group":"Item");
+        move_data.append('id', values[2]);
+            
+        $.ajax({
+            url: window.location.origin + '/move_position',
+            type: 'POST',
+            processData: false, // important
+            contentType: false, // important
+            dataType : 'json',
+            data: move_data,
+            //async: false,
+            });
+
+        reload_page();
+    }
+
+</script>
