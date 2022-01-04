@@ -37,13 +37,13 @@ def _edit_object_(object_to_edit, field_to_edit, new_value):
 def _delete_object_(object_to_be_deleted):   
     object_to_be_deleted.delete()
 
-def make_new_user(user_name, user_last_name):
+def make_new_user(user_data):
     
-    user_obj = _make_object_("Customer", {"name": user_name, "last_name": user_last_name})[0]
+    user_obj = _make_object_("Customer", user_data)[0]
     user_cart_obj = _make_object_("Cart", {"belongs_type": "Customer", "belongs_id": user_obj.id})[0]
     _edit_object_(user_obj, "cart_id", user_cart_obj.id)
 
-    return _get_objects_("Customer", {"name": user_name})
+    return user_obj
 
 def edit_user_language(user_id, language_id):
 

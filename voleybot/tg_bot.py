@@ -20,8 +20,47 @@ import voleybotapp.api as api
 
 voleybot_ = telebot.TeleBot(TOKEN)
 
-# // Functions Start
+# // META START
 
+def edit_user_language(language_text, user_id):
+    
+    string_obj = api._get_objects_("TextString", {"text": language_text})[0]
+    language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
+    api.edit_user_language(user_id, language_obj.code)
+    show_keyboard(user_id, 2)
+
+def get_screen_meta():
+    pass
+
+# // META END
+
+# // INPUT PROCESSING START
+
+# Start command processing
+@voleybot_.message_handler(commands=['start',])
+def start_hander(meta):
+
+        tel_user_object_list = api._get_objects_("TelUser", {"tel_id": meta.from_user.id})
+
+        if len(tel_user_object_list) == 0:
+            
+            new_user_first_name = meta.from_user.first_name if meta.from_user.first_name else ""
+            new_user_last_name = meta.from_user.last_name if meta.from_user.last_name else ""
+            
+            core_user_obj = api.make_new_user({"first_name": new_user_first_name, "last_name": new_user_last_name})
+            api._make_object_("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
+            
+            show_keyboard(meta.from_user.id, 1, language_code="all-vertical")
+
+        elif len(tel_user_object_list) == 1:          
+            show_keyboard(meta.from_user.id, 2)
+
+        else:
+            pass #TODO write code for error processing (multiple users with the same ids cannot exist)
+
+        add_message_to_history(meta.from_user.id, meta.message_id)
+
+# Button press processing
 @voleybot_.callback_query_handler(func=lambda call:True)    
 def button_press(callback_data):
 
@@ -31,21 +70,7 @@ def button_press(callback_data):
     button_obj = api._get_objects_("Button", {"id": button_data[1]})[0]
     exec(button_obj.on_press_action)
 
-@voleybot_.message_handler(commands=['start',])
-def start_hander(meta):
-
-        tel_user_object_list = api._get_objects_("TelUser", {"tel_id": meta.from_user.id})
-
-        if len(tel_user_object_list) == 0:
-            core_user_obj = api.make_new_user(meta.from_user.first_name, (meta.from_user.last_name if meta.from_user.last_name else ""))
-            api._make_object_("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
-            show_keyboard(meta.from_user.id, 1, language_code="all-vertical")
-
-        else: 
-            show_keyboard(meta.from_user.id, 2)
-
-        add_message_to_history(meta.from_user.id, meta.message_id)
-
+# Image processing (adding items to the cart by QR Code and ignoring other images)
 @voleybot_.message_handler(func=lambda message:True, content_types=["photo"])
 def image_handler(message):
     
@@ -69,8 +94,9 @@ def image_handler(message):
             add_message_to_history(tel_user_obj.tel_id, message.message_id)
             show_keyboard(message.from_user.id, 13)
 
-    voleybot_.delete_message(message.from_user.id, message.message_id) # bug; for some reason auto-delete does not work through message history
+    voleybot_.delete_message(message.from_user.id, message.message_id) # TODO bug; for some reason auto-delete does not work through message history
 
+# Trash processing
 @voleybot_.message_handler(func=lambda message:True, content_types=["text", "audio", "voice", "video", "document"])
 def user_handler(message):
     
@@ -79,26 +105,36 @@ def user_handler(message):
     api._edit_object_(tel_user_obj, "qr_code", 0)
     voleybot_.delete_message(message.from_user.id, message.message_id)
 
-def add_message_to_history(user_id, message_id):
+# // INPUT PROCESSING END
 
-    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
-    api._edit_object_(user_obj, 'message_history', f"{user_obj.message_history}{message_id};")
+# // OUTPUT PROCESSING START
 
-def delete_messages(user_id):
+# Output keyboard to the user
+def show_keyboard(user_id, keyboard_id, **kwargs):
+    message = get_keyboard(user_id, keyboard_id, **kwargs)
+    message_obj = voleybot_.send_message(user_id, message["text"], reply_markup=message["keyboard"])
+    add_message_to_history(user_id, message_obj.message_id)
 
-    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
-    
-    for message_id in user_obj.message_history.split(";"):
+def return_to_main_page():
 
-        if message_id:
-            try: 
-                voleybot_.delete_message(user_id, message_id)
-            except Exception as e:
-                print(e)
-                continue
+    for tg_user in api._get_objects_("TelUser", {}):
+ 
+        language_code = api._get_objects_("Customer", {"id": tg_user.core_db_id})[0].language_code
+        text_string = api._get_objects_("TextString", {"str_id": 18, "language_code": language_code})[0].text
 
-    api._edit_object_(user_obj, "message_history", ";")
+        try:
+            temp_mess = voleybot_.send_message(tg_user.tel_id, text_string)
+            add_message_to_history(tg_user.tel_id, temp_mess.message_id)
+            time.sleep(3)
+            show_keyboard(tg_user.tel_id, 2)
+        except:
+            pass
 
+# // OUTPUT PROCESSING END
+
+# // KEYBOARD PROCESSING START
+
+# Receive button objects of the keyboard
 def get_buttons(user_id, button_id, language_code, current_y_coordinate):
         
     def init_rv():
@@ -136,6 +172,7 @@ def get_buttons(user_id, button_id, language_code, current_y_coordinate):
 
     return rv
 
+# Receive keyboard object itself
 def get_keyboard(user_id, keyboard_id, **args):
 
     def get_object():
@@ -193,7 +230,7 @@ def get_keyboard(user_id, keyboard_id, **args):
     def check_flush():
         
         if keyboard_object.flush_chat:            
-            delete_messages(user_id)
+            clear_messages(user_id)
 
     def call_on_init(user_id):
 
@@ -221,32 +258,32 @@ def get_keyboard(user_id, keyboard_id, **args):
 
     return {"text": keyboard_text, "keyboard": keyboard.to_json()}
 
-def show_keyboard(user_id, keyboard_id, **kwargs):
-    message = get_keyboard(user_id, keyboard_id, **kwargs)
-    message_obj = voleybot_.send_message(user_id, message["text"], reply_markup=message["keyboard"])
-    add_message_to_history(user_id, message_obj.message_id)
+# // KEYBOARD PROCESSING END
 
-def return_to_main_page():
+# // USER MESSAGE HISTORY PROCESSING START
 
-    for tg_user in api._get_objects_("TelUser", {}):
- 
-        language_code = api._get_objects_("Customer", {"id": tg_user.core_db_id})[0].language_code
-        text_string = api._get_objects_("TextString", {"str_id": 18, "language_code": language_code})[0].text
+def add_message_to_history(user_id, message_id):
 
-        try:
-            temp_mess = voleybot_.send_message(tg_user.tel_id, text_string)
-            add_message_to_history(tg_user.tel_id, temp_mess.message_id)
-            time.sleep(3)
-            show_keyboard(tg_user.tel_id, 2)
-        except:
-            pass
+    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
+    api._edit_object_(user_obj, 'message_history', f"{user_obj.message_history}{message_id};")
 
-def edit_user_language(language_text, user_id):
+def clear_messages(user_id):
+
+    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
     
-    string_obj = api._get_objects_("TextString", {"text": language_text})[0]
-    language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
-    api.edit_user_language(user_id, language_obj.code)
-    show_keyboard(user_id, 2)
+    for message_id in user_obj.message_history.split(";"):
+
+        if message_id:
+            try: 
+                voleybot_.delete_message(user_id, message_id)
+            except Exception as e:
+                continue
+
+    api._edit_object_(user_obj, "message_history", ";")
+
+# // USER MESSAGE HISTORY PROCESSING END
+
+# // MAIN START
 
 def show_menu(user_id):
 
@@ -381,7 +418,7 @@ def add_item_to_cart(user_id, item_id, coming_from, refresh="True"):
     voleybot_.delete_message(user_id, mes.message_id)
 
     if refresh == "True":
-        delete_messages(user_id)
+        clear_messages(user_id)
         show_keyboard(user_id, int(coming_from))
 
 def delete_item_from_cart(user_id, item_id, quantity):
@@ -457,7 +494,7 @@ def cancel_order(order):
     except:
         pass
 
-# // Functions End
+# // MAIN END
 
 if __name__ == "__main__":
 
