@@ -336,9 +336,9 @@ def read_qr_code(image):
     val, pts, st_code=det.detectAndDecode(img)
 
     if (len(res:=_get_objects_("QRCode", {"value": val}))) == 0:
-        return 0
+        return -1
     else:
         if ((val) and ((item:=_get_objects_("Item", {"id": res[0].item_id})[0]).is_active)):
-            return item
+            return item.id
         else:
-            return 0 
+            return -1 

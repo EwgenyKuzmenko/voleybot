@@ -8,10 +8,9 @@ import telebot
 from telebot import types
 
 global voleybot_
-
-#if __name__ == "__main__":
     
 TOKEN = secret.tg_token
+TEMP_MESSAGES_SLEEP_TIME = 3
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'voleybot.settings'
 django.setup()
@@ -22,15 +21,61 @@ voleybot_ = telebot.TeleBot(TOKEN)
 
 # // META START
 
-def edit_user_language(language_text, user_id):
-    
-    string_obj = api._get_objects_("TextString", {"text": language_text})[0]
-    language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
-    api.edit_user_language(user_id, language_obj.code)
-    show_keyboard(user_id, 2)
+def get_meta(message=None, user=None, keyboard_data=None, button_data=None):
+     
+#    def process_key(rv, key, i_range, check, append_value):
+#        
+#        rv[key] = []
+#        for i in i_range:
+#            if check:
+#                rv[key].append(append_value)
+#            else:
+#                rv[key].append(None)
+#
+#        return rv 
+#
+#    tables = [[], [], [], ]
+#
+#    rv = process_key(rv, "tel_user_ids", range(len([message.from_user.id,])), eval("[message.from_user.id,][i] is not None"), eval("message.from_user.id"))
+#    
+#    TODO finish this idea later (tables for even more automatization) :-)
 
-def get_screen_meta():
-    pass
+    rv = {}
+
+    rv["tel_user_ids"] = [message.from_user.id if message is not None else user if user is not None else None, ]
+    rv["tel_user_first_names"] = [message.from_user.first_name if message is not None else None, ]
+    rv["tel_user_last_names"] = [message.from_user.last_name, ]
+    rv["tel_user_objs"] = []
+    for i in range(len(rv["tel_user_ids"])):
+        if rv["tel_user_ids"][i] is not None: 
+            rv["tel_user_objs"].append(*api._get_objects_("TelUser", {"id": rv["tel_user_ids"][i]}))
+        else:
+            rv["tel_user_objs"].append(None)
+
+    rv["customer_ids"] = []
+    for i in range(len(rv["tel_user_objs"])):
+        if rv["tel_user_objs"][i] is not None: 
+            rv["customer_ids"].append(rv["tel_user_objs"][i].core_db_id)
+        else:
+            rv["customer_ids"].append(None)
+    rv["customer_objs"] = []
+    for i in range(len(rv["customer_ids"])):
+        if rv["customer_ids"][i] is not None: 
+            rv["customer_objs"].append(*api._get_objects_("Customer", {"id": rv["customer_ids"][i]}))
+        else:
+            rv["customer_objs"].append(None)
+
+    rv["button_ids"] = [button_data[1], ]
+    rv["button_objs"] = [*api._get_objects_("Button", {"id": button_data[1]}),]
+    rv["button_datas"] = [button_data, ]
+
+    #rv["language_id"] = ""
+    #rv["language_obj_s"] = ""
+
+    #rv["text_string_id"] = ""
+    #rv["text_string_obj_s"] = ""
+
+    return rv
 
 # // META END
 
@@ -40,25 +85,23 @@ def get_screen_meta():
 @voleybot_.message_handler(commands=['start',])
 def start_hander(meta):
 
-        tel_user_object_list = api._get_objects_("TelUser", {"tel_id": meta.from_user.id})
+        metadata = get_meta(message=meta)
 
-        if len(tel_user_object_list) == 0:
-            
-            new_user_first_name = meta.from_user.first_name if meta.from_user.first_name else ""
-            new_user_last_name = meta.from_user.last_name if meta.from_user.last_name else ""
-            
-            core_user_obj = api.make_new_user({"first_name": new_user_first_name, "last_name": new_user_last_name})
+        if len(metadata['tel_user_objs']) == 0:
+                       
+            core_user_obj = api.make_new_user({"first_name": metadata["tel_user_first_names"][0], "last_name": metadata["tel_user_last_names"][0]})
             api._make_object_("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
-            
-            show_keyboard(meta.from_user.id, 1, language_code="all-vertical")
+            metadata = get_meta(meta)
 
-        elif len(tel_user_object_list) == 1:          
-            show_keyboard(meta.from_user.id, 2)
+            show_keyboard(metadata["tel_user_ids"][0], 1, language_code="all-vertical")
+
+        elif len(meta['tel_user_objs']) == 1:          
+            show_keyboard(metadata["tel_user_ids"][0], 2)
 
         else:
-            pass #TODO write code for error processing (multiple users with the same ids cannot exist)
+            raise NotImplementedError
 
-        add_message_to_history(meta.from_user.id, meta.message_id)
+        for i in range(len(metadata["tel_user_ids"])): add_message_to_history(metadata["tel_user_ids"][i], meta.message_id)
 
 # Button press processing
 @voleybot_.callback_query_handler(func=lambda call:True)    
@@ -66,17 +109,16 @@ def button_press(callback_data):
 
     voleybot_.answer_callback_query(callback_data.id) 
 
-    button_data = callback_data.data.split("_")
-    button_obj = api._get_objects_("Button", {"id": button_data[1]})[0]
-    exec(button_obj.on_press_action)
+    metadata = get_meta(button_data=callback_data.data.split("_"))
+    for i in range(len(metadata["button_objs"])): exec(metadata["button_objs"][i].on_press_action) # TODO switch tg database
 
 # Image processing (adding items to the cart by QR Code and ignoring other images)
 @voleybot_.message_handler(func=lambda message:True, content_types=["photo"])
 def image_handler(message):
     
-    tel_user_obj = api._get_objects_("TelUser", {"tel_id": message.from_user.id})[0]
+    metadata = get_meta(message=message)
 
-    if tel_user_obj.qr_code:
+    if metadata["tel_user_objs"][0].qr_code:
     
         raw = message.photo[2].file_id
         name = f"./static/scanned/{raw}.png"
@@ -85,25 +127,28 @@ def image_handler(message):
         with open(name,'wb') as new_file:
             new_file.write(downloaded_file)
 
-        if (res:=api.read_qr_code(name)) != 0:
-            add_message_to_history(tel_user_obj.tel_id, message.message_id)
-            api._edit_object_(tel_user_obj, "qr_code", 0)
-            add_item_to_cart(tel_user_obj.tel_id, res.id, 2)
+        if (res:=api.read_qr_code(name)) != -1:
+            for i in range(len(metadata["tel_user_objs"])):
+                add_message_to_history(metadata["tel_user_ids"][i], message.message_id)
+                api._edit_object_(metadata["tel_user_objs"][i], "qr_code", 0)
+                add_item_to_cart(metadata["tel_user_ids"][i], res.id, 2)
         
         else:
-            add_message_to_history(tel_user_obj.tel_id, message.message_id)
-            show_keyboard(message.from_user.id, 13)
+            for i in range(len(metadata["tel_user_objs"])):
+                add_message_to_history(metadata["tel_user_ids"][i], message.message_id)
+                show_keyboard(metadata["tel_user_ids"][i], 13)
 
-    voleybot_.delete_message(message.from_user.id, message.message_id) # TODO bug; for some reason auto-delete does not work through message history
+        for i in range(len(metadata["tel_user_objs"])): voleybot_.delete_message(metadata["tel_user_ids"][i], message.message_id) # TODO bug; for some reason auto-delete does not work through message history
 
 # Trash processing
 @voleybot_.message_handler(func=lambda message:True, content_types=["text", "audio", "voice", "video", "document"])
 def user_handler(message):
     
-    tel_user_obj = api._get_objects_("TelUser", {"tel_id": message.from_user.id})[0]
+    metadata = get_meta(message=message)
 
-    api._edit_object_(tel_user_obj, "qr_code", 0)
-    voleybot_.delete_message(message.from_user.id, message.message_id)
+    for i in range(len(metadata["tel_user_objs"])):
+        api._edit_object_(metadata["tel_user_objs"][i], "qr_code", 0)
+        voleybot_.delete_message(metadata["tel_user_ids"][i], message.message_id)
 
 # // INPUT PROCESSING END
 
@@ -125,10 +170,17 @@ def return_to_main_page():
         try:
             temp_mess = voleybot_.send_message(tg_user.tel_id, text_string)
             add_message_to_history(tg_user.tel_id, temp_mess.message_id)
-            time.sleep(3)
+            time.sleep(TEMP_MESSAGES_SLEEP_TIME)
             show_keyboard(tg_user.tel_id, 2)
         except:
             pass
+
+def edit_user_language(language_text, user_id):
+    
+    string_obj = api._get_objects_("TextString", {"text": language_text})[0]
+    language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
+    api.edit_user_language(user_id, language_obj.code)
+    show_keyboard(user_id, 2)
 
 # // OUTPUT PROCESSING END
 
@@ -264,22 +316,25 @@ def get_keyboard(user_id, keyboard_id, **args):
 
 def add_message_to_history(user_id, message_id):
 
-    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
-    api._edit_object_(user_obj, 'message_history', f"{user_obj.message_history}{message_id};")
+    metadata = get_meta(user=user_id) 
+    for i in range(len(metadata["tel_user_objs"])):
+        api._edit_object_(metadata["tel_user_objs"][i], 'message_history', f"{metadata['tel_user_objs'][i].message_history}{message_id};")
 
 def clear_messages(user_id):
 
-    user_obj = api._get_objects_("TelUser", {"tel_id": user_id})[0]
-    
-    for message_id in user_obj.message_history.split(";"):
+    metadata = get_meta(user=user_id)
 
-        if message_id:
-            try: 
-                voleybot_.delete_message(user_id, message_id)
-            except Exception as e:
-                continue
+    for i in range(len(metadata["tel_user_objs"])):
+        
+        for message_id in metadata["tel_user_objs"][i].message_history.split(";"):
 
-    api._edit_object_(user_obj, "message_history", ";")
+            if message_id:
+                try: 
+                    voleybot_.delete_message(metadata["tel_user_ids"][i], message_id)
+                except Exception as e:
+                    continue
+
+        api._edit_object_(metadata["tel_user_objs"][i], "message_history", ";")
 
 # // USER MESSAGE HISTORY PROCESSING END
 
@@ -414,7 +469,7 @@ def add_item_to_cart(user_id, item_id, coming_from, refresh="True"):
     api.add_item_to_cart(cart_obj, item_obj)
 
     mes = voleybot_.send_message(user_id, str_text)
-    time.sleep(3)
+    time.sleep(TEMP_MESSAGES_SLEEP_TIME)
     voleybot_.delete_message(user_id, mes.message_id)
 
     if refresh == "True":
@@ -434,7 +489,7 @@ def delete_item_from_cart(user_id, item_id, quantity):
     api.delete_item_from_cart(cart_obj, item_obj, quantity)
 
     mes = voleybot_.send_message(user_id, str_text)
-    time.sleep(3)
+    time.sleep(TEMP_MESSAGES_SLEEP_TIME)
     add_message_to_history(user_id, mes.message_id)
     show_keyboard(user_id, (5 if len(cart_obj.items_ids.split(";")) > 2 else 7))
 
@@ -449,7 +504,7 @@ def clear_cart(user_id):
     api.clear_cart(cart_obj)
 
     mes = voleybot_.send_message(user_id, str_obj)
-    time.sleep(3)
+    time.sleep(TEMP_MESSAGES_SLEEP_TIME)
     add_message_to_history(user_id, mes.message_id)
     show_keyboard(user_id, 2)
 
