@@ -21,59 +21,65 @@ voleybot_ = telebot.TeleBot(TOKEN)
 
 # // META START
 
-def get_meta(message=None, user=None, keyboard_data=None, button_data=None):
+def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, button_data=None):
      
-#    def process_key(rv, key, i_range, check, append_value):
-#        
-#        rv[key] = []
-#        for i in i_range:
-#            if check:
-#                rv[key].append(append_value)
-#            else:
-#                rv[key].append(None)
-#
-#        return rv 
-#
-#    tables = [[], [], [], ]
-#
-#    rv = process_key(rv, "tel_user_ids", range(len([message.from_user.id,])), eval("[message.from_user.id,][i] is not None"), eval("message.from_user.id"))
-#    
-#    TODO finish this idea later (tables for even more automatization) :-)
-
     rv = {}
 
-    rv["tel_user_ids"] = [message.from_user.id if message is not None else user if user is not None else None, ]
-    rv["tel_user_first_names"] = [message.from_user.first_name if message is not None else None, ]
-    rv["tel_user_last_names"] = [message.from_user.last_name, ]
+    rv["tel_user_ids"] = []
+    if message is not None:
+        rv["tel_user_ids"].append(message.from_user.id)
+        rv["tel_user_first_names"] = [message.from_user.first_name if message is not None else None, ]
+        rv["tel_user_last_names"] = [message.from_user.last_name if message is not None else None, ]
+    
+    if user_flag is int:
+        rv["tel_user_ids"].append(user_flag) 
+    elif user_flag is "all":
+        for obj_ in api._get_objects_("TelUser", {}):
+            rv["tel_user_ids"].append(obj_.tel_id)
+
+
     rv["tel_user_objs"] = []
-    for i in range(len(rv["tel_user_ids"])):
-        if rv["tel_user_ids"][i] is not None: 
-            rv["tel_user_objs"].append(*api._get_objects_("TelUser", {"id": rv["tel_user_ids"][i]}))
+    for tel_user_id in rv["tel_user_ids"]:
+        if tel_user_id is not None: 
+            rv["tel_user_objs"].extend(api._get_objects_("TelUser", {"id": tel_user_id}))
         else:
             rv["tel_user_objs"].append(None)
 
+
     rv["customer_ids"] = []
-    for i in range(len(rv["tel_user_objs"])):
-        if rv["tel_user_objs"][i] is not None: 
-            rv["customer_ids"].append(rv["tel_user_objs"][i].core_db_id)
+    for tel_user in rv["tel_user_objs"]:
+        if tel_user is not None: 
+            rv["customer_ids"].append(tel_user.core_db_id)
         else:
             rv["customer_ids"].append(None)
     rv["customer_objs"] = []
-    for i in range(len(rv["customer_ids"])):
-        if rv["customer_ids"][i] is not None: 
-            rv["customer_objs"].append(*api._get_objects_("Customer", {"id": rv["customer_ids"][i]}))
+    for customer_id in rv["customer_ids"]:
+        if customer_id is not None: 
+            rv["customer_objs"].extend(api._get_objects_("Customer", {"id": customer_id}))
         else:
             rv["customer_objs"].append(None)
 
-    rv["button_ids"] = [button_data[1], ]
+
+    rv["string_objs"] = []
+    if string is not None:
+        for customer in rv["customer_objs"]:
+            if customer is not None:
+                language_id = api._get_objects_("Language", {"code": customer.language_code})[0]
+                rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": string, "lang_id": language_id}))
+            else:
+                rv["string_objs"].append(None)
+    
+    rv["string_text"] = []
+    if string is not None:
+        for string_ in rv["string_objs"]:
+            if string_ is not None:
+                rv["string_text"].append(string_.text)
+            else:
+                rv["string_text"].append(None)
+
+    rv["button_ids"] = [button_data[1], ] # TODO reformat this
     rv["button_objs"] = [*api._get_objects_("Button", {"id": button_data[1]}),]
     rv["button_datas"] = [button_data, ]
-
-    #rv["language_id"] = ""
-    #rv["language_obj_s"] = ""
-
-    #rv["text_string_id"] = ""
-    #rv["text_string_obj_s"] = ""
 
     return rv
 
@@ -105,7 +111,7 @@ def start_hander(meta):
 
 # Button press processing
 @voleybot_.callback_query_handler(func=lambda call:True)    
-def button_press(callback_data):
+def button_press(callback_data): # TODO check out after the reformation
 
     voleybot_.answer_callback_query(callback_data.id) 
 
@@ -162,16 +168,15 @@ def show_keyboard(user_id, keyboard_id, **kwargs):
 
 def return_to_main_page():
 
-    for tg_user in api._get_objects_("TelUser", {}):
- 
-        language_code = api._get_objects_("Customer", {"id": tg_user.core_db_id})[0].language_code
-        text_string = api._get_objects_("TextString", {"str_id": 18, "language_code": language_code})[0].text
+    metadata = get_meta(user_flag="all", string=18)
 
+    for i in range(len(metadata["tel_user_objs"])):
+ 
         try:
-            temp_mess = voleybot_.send_message(tg_user.tel_id, text_string)
-            add_message_to_history(tg_user.tel_id, temp_mess.message_id)
+            temp_mess = voleybot_.send_message(metadata["tel_user_ids"][i], metadata["string_text"][i])
+            add_message_to_history(metadata["tel_user_ids"][i], temp_mess.message_id)
             time.sleep(TEMP_MESSAGES_SLEEP_TIME)
-            show_keyboard(tg_user.tel_id, 2)
+            show_keyboard(metadata["tel_user_ids"][i], 2)
         except:
             pass
 
@@ -316,13 +321,13 @@ def get_keyboard(user_id, keyboard_id, **args):
 
 def add_message_to_history(user_id, message_id):
 
-    metadata = get_meta(user=user_id) 
+    metadata = get_meta(user_flag=user_id) 
     for i in range(len(metadata["tel_user_objs"])):
         api._edit_object_(metadata["tel_user_objs"][i], 'message_history', f"{metadata['tel_user_objs'][i].message_history}{message_id};")
 
 def clear_messages(user_id):
 
-    metadata = get_meta(user=user_id)
+    metadata = get_meta(user_flag=user_id)
 
     for i in range(len(metadata["tel_user_objs"])):
         
