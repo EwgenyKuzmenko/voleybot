@@ -77,7 +77,9 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
             else:
                 rv["string_text"].append(None)
 
-    rv["button_ids"] = [button_data[1], ] # TODO reformat this
+    rv["button_ids"] = []
+
+    if button_data is not None: rv["button_ids"].append(button_data[1])
     rv["button_objs"] = [*api._get_objects_("Button", {"id": button_data[1]}),]
     rv["button_datas"] = [button_data, ]
 
