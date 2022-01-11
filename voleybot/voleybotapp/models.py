@@ -10,7 +10,7 @@ from django.db import models
 class Customer(models.Model):
 
     first_name = models.CharField(max_length=128, blank=True)
-    last_name = models.CharField(max_length=128, blank=True)
+    last_name = models.CharField(max_length=128, blank=True) # TODO changed, run migration
     cart_id = models.IntegerField(default=1)
     orders_ids = models.CharField(max_length=5096, default=";")
     language_code = models.CharField(max_length=128, default="1")

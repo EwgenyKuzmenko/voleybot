@@ -21,15 +21,25 @@ voleybot_ = telebot.TeleBot(TOKEN)
 
 # // META START
 
-def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, button_data=None):
-     
+def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, button_data=None)->dict:
+    
+    '''
+    message = telebot.Message object \n
+    user_flag = either telebot.from_user.id or "all" for all users \n
+    string = either string id in the db as int or "{str_id in the db}all" for all languages \n
+    keyboard_data = (keyboard_id, all_mode= "vertical" | "horizontal" | False (bool), list_of_buttons_ids) \n
+    button_data = (button_id, button_unique_data) # TODO realign according to indexing change
+    '''
+
     rv = {}
 
     rv["tel_user_ids"] = []
+    rv["tel_user_first_names"] = []
+    rv["tel_user_last_names"] = []
     if message is not None:
         rv["tel_user_ids"].append(message.from_user.id)
-        rv["tel_user_first_names"] = [message.from_user.first_name if message is not None else None, ]
-        rv["tel_user_last_names"] = [message.from_user.last_name if message is not None else None, ]
+        rv["tel_user_first_names"].append(message.from_user.first_name)
+        rv["tel_user_last_names"].append(message.from_user.last_name)
     
     if user_flag is int:
         rv["tel_user_ids"].append(user_flag) 
@@ -60,14 +70,51 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
             rv["customer_objs"].append(None)
 
 
+    rv["keyboard_ids"] = []
+    rv["keyboard_objs"] = []
+    if keyboard_data is not None:
+        rv["keyboard_ids"].append(keyboard_data[0])
+    
+    for keyboard_id in rv["keyboard_ids"]:
+        if keyboard_id is not None:
+            rv["keyboard_objs"].extend(api._get_objects_("Keyboard", {"id": keyboard_id}))
+    
+
+    rv["button_ids"] = []
+    rv["button_datas"] = []
+    rv["button_objs"] = []
+    if button_data is not None: 
+        rv["button_ids"].append(button_data[0])
+        rv["button_datas"].append(button_data[1])
+    
+    for button_id in rv["button_ids"]:
+        if button_id is not None:
+            rv["button_objs"].extend(api._get_objects_("Button", {"id": button_id}))
+
+
     rv["string_objs"] = []
     if string is not None:
         for customer in rv["customer_objs"]:
             if customer is not None:
                 language_id = api._get_objects_("Language", {"code": customer.language_code})[0]
-                rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": string, "lang_id": language_id}))
+                if not string.endswith("all"): 
+                    rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": string, "lang_id": language_id}))
+                else: 
+                    rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": int(string.split("all")[0])}))
             else:
                 rv["string_objs"].append(None)
+    if keyboard_data is not None:
+        for keyboard in rv["keyboard_objs"]:
+            if keyboard is not None:
+                for customer in rv["customer_objs"]:
+                    if customer is not None:
+                        language_id = api._get_objects_("Language", {"code": customer.language_code})[0]
+                        if not keyboard_data[1]: 
+                            rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": keyboard.label_id, "lang_id": language_id}))
+                        else:
+                            rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": keyboard.label_id}))
+                    else:
+                        rv["string_objs"].append(None)
     
     rv["string_text"] = []
     if string is not None:
@@ -77,11 +124,6 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
             else:
                 rv["string_text"].append(None)
 
-    rv["button_ids"] = []
-
-    if button_data is not None: rv["button_ids"].append(button_data[1])
-    rv["button_objs"] = [*api._get_objects_("Button", {"id": button_data[1]}),]
-    rv["button_datas"] = [button_data, ]
 
     return rv
 
@@ -234,21 +276,21 @@ def get_buttons(user_id, button_id, language_code, current_y_coordinate):
 # Receive keyboard object itself
 def get_keyboard(user_id, keyboard_id, **args):
 
-    def get_object():
+    '''def get_object():
         global keyboard_object
-        keyboard_object = api._get_objects_("Keyboard", {"id": keyboard_id})[0]
+        keyboard_object = api._get_objects_("Keyboard", {"id": keyboard_id})[0]'''
 
-    def get_language_code():
+    '''def get_language_code():
         global language_code
         if args.get("language_code") is not None: language_code = args.get("language_code")
         else:
             tel_user = api._get_objects_ ("TelUser", {"tel_id": user_id})[0]
-            language_code = api._get_objects_("Customer", {"id": tel_user.core_db_id})[0].language_code
+            language_code = api._get_objects_("Customer", {"id": tel_user.core_db_id})[0].language_code'''
 
-    def get_coordinates():
+    '''def get_coordinates():
         global x, y
         x = keyboard_object.layout_x
-        y = keyboard_object.layout_y
+        y = keyboard_object.layout_y'''
 
     def get_buttons_list():
         global keyboard_buttons
@@ -305,8 +347,8 @@ def get_keyboard(user_id, keyboard_id, **args):
             keyboard = original_keyboard
             keyboard_text = original_keyboard_text
 
-    get_object()
-    get_language_code()
+    #get_object()
+    #get_language_code()
     get_coordinates()
     get_buttons_list()
     build_layout()
