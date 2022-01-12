@@ -28,7 +28,7 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
     user_flag = either telebot.from_user.id or "all" for all users \n
     string = either string id in the db as int or "{str_id in the db}all" for all languages \n
     keyboard_data = (keyboard_id, all_mode= "vertical" | "horizontal" | False (bool), list_of_buttons_ids) \n
-    button_data = (button_id, button_unique_data) # TODO realign according to indexing change
+    button_data = (button_id, var1-db_obj_id, var2-override_str) # TODO realign according to indexing change
     '''
 
     rv = {}
@@ -36,6 +36,21 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
     rv["tel_user_ids"] = []
     rv["tel_user_first_names"] = []
     rv["tel_user_last_names"] = []
+    rv["tel_user_objs"] = []
+    rv["customer_ids"] = []
+    rv["customer_objs"] = []
+    rv["keyboard_ids"] = []
+    rv["keyboard_objs"] = []
+    rv["keyboard_layouts"] = []
+    rv["button_ids"] = []
+    rv["button_datas"] = []
+    rv["button_objs"] = []
+    rv["string_objs"] = []
+    rv["string_text"] = []
+    rv["tel_button_objs"] = []
+    rv["tel_keyboard_objs"] = []
+
+    # tel_user_ids, tel_user_first_names, tel_user_last_names
     if message is not None:
         rv["tel_user_ids"].append(message.from_user.id)
         rv["tel_user_first_names"].append(message.from_user.first_name)
@@ -47,52 +62,79 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
         for obj_ in api._get_objects_("TelUser", {}):
             rv["tel_user_ids"].append(obj_.tel_id)
 
-
-    rv["tel_user_objs"] = []
+    # tel_user_objs
     for tel_user_id in rv["tel_user_ids"]:
         if tel_user_id is not None: 
             rv["tel_user_objs"].extend(api._get_objects_("TelUser", {"id": tel_user_id}))
         else:
             rv["tel_user_objs"].append(None)
 
-
-    rv["customer_ids"] = []
+    # customer_ids
     for tel_user in rv["tel_user_objs"]:
         if tel_user is not None: 
             rv["customer_ids"].append(tel_user.core_db_id)
         else:
             rv["customer_ids"].append(None)
-    rv["customer_objs"] = []
+    
+    # customer_objs
     for customer_id in rv["customer_ids"]:
         if customer_id is not None: 
             rv["customer_objs"].extend(api._get_objects_("Customer", {"id": customer_id}))
         else:
             rv["customer_objs"].append(None)
 
-
-    rv["keyboard_ids"] = []
-    rv["keyboard_objs"] = []
+    # keyboard_ids
     if keyboard_data is not None:
         rv["keyboard_ids"].append(keyboard_data[0])
+    else:
+        rv["keyboard_ids"].append(None)
     
+    # keyboard_objs
     for keyboard_id in rv["keyboard_ids"]:
         if keyboard_id is not None:
             rv["keyboard_objs"].extend(api._get_objects_("Keyboard", {"id": keyboard_id}))
+        else:
+            rv["keyboard_objs"].append(None)
     
+    # keyboard_layouts
+    for keyboard_obj in rv["keyboard_objs"]:
+        if keyboard_obj is not None: # TODO specifically check all-vertical language_code
+            
+            copy_of_buttons = keyboard_obj.buttons.split(";")[:-1]
+            if keyboard_data[1] == "vertical":
+                original_list = copy_of_buttons.copy()
+                for i in range(len(copy_of_buttons)):
+                    copy_of_buttons.extend(original_list)
 
-    rv["button_ids"] = []
-    rv["button_datas"] = []
-    rv["button_objs"] = []
-    if button_data is not None: 
-        rv["button_ids"].append(button_data[0])
-        rv["button_datas"].append(button_data[1])
-    
+            sub_rv = list()
+
+            for i in range(keyboard_obj.layout_x):
+                sub_rv.append(list())
+                for j in range(keyboard_obj.layout_x):
+                    if len(copy_of_buttons) > 0:
+                        if copy_of_buttons[0] and copy_of_buttons[0] != "None":
+                            rv["button_ids"].append(copy_of_buttons[0])
+                            rv["button_datas"].append((copy_of_buttons[0], None, None))    
+                        del copy_of_buttons[0]
+
+            rv["keyboard_layouts"].append(sub_rv)   
+        
+    # button_ids, button_data
+    if button_data is not None:
+        if type(button_data) != list or type(button_data) != tuple:
+            button_data = [button_data,]
+        for button_data_ in button_data: 
+            rv["button_ids"].append(button_data_[0])
+            rv["button_datas"].append(button_data_)
+        
+    # button_objs
     for button_id in rv["button_ids"]:
         if button_id is not None:
             rv["button_objs"].extend(api._get_objects_("Button", {"id": button_id}))
+        else:
+            rv["button_objs"].append(None)
 
-
-    rv["string_objs"] = []
+    # string_objs
     if string is not None:
         for customer in rv["customer_objs"]:
             if customer is not None:
@@ -115,8 +157,13 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
                             rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": keyboard.label_id}))
                     else:
                         rv["string_objs"].append(None)
+    for i, button_obj in enumerate(rv["button_objs"]):
+        if rv["button_datas"][i] is not str: # TODO finish this
+            pass
+        else:
+            pass
     
-    rv["string_text"] = []
+    # string_text
     if string is not None:
         for string_ in rv["string_objs"]:
             if string_ is not None:
@@ -124,6 +171,16 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
             else:
                 rv["string_text"].append(None)
 
+    # tel_button_objs
+        for i, button_obj in enumerate(rv["button_objs"]):
+            if button_obj is not None:
+                rv["tel_button_objs"].append(types.InlineKeyboardButton(text=rv["string_text"][i+sum(x is not None for x in rv["keyboard_objs"])+(string_ is not None)], callback_data='_'.join(str(e) for e in rv["button_datas"][i])))
+
+    # tel_keyboard_objs
+        for i, keyboard_obj in enumerate(rv["keyboard_objs"]):
+            if keyboard_obj is not None: # TODO finish this, Also, how to auto resize?
+                for 
+                rv["tel_keyboard_objs"].append(types.InlineKeyboardMarkup())
 
     return rv
 
@@ -233,100 +290,9 @@ def edit_user_language(language_text, user_id):
 
 # // OUTPUT PROCESSING END
 
-# // KEYBOARD PROCESSING START
-
 # Receive button objects of the keyboard
-def get_buttons(user_id, button_id, language_code, current_y_coordinate):
-        
-    def init_rv():
-        global rv
-        rv = list()
 
-    def get_language_codes():
-        global language_codes
-        if language_code == "all-horizontal":
-            language_codes = api._get_objects_("Language", {})
-            language_codes = list(language_codes)
-            for i in range(len(language_codes)):
-                language_codes[i] = language_codes[i].code
-        elif language_code == "all-vertical":
-            language_codes = (api._get_objects_("Language", {})[current_y_coordinate].code,)
-        else:
-            language_codes = (language_code,)
-
-    def get_button_obj():
-        global button_obj
-        button_obj = api._get_objects_("Button", {"id": button_id})[0]
-
-    def populate_rv():
-        for language in language_codes:
-            if language:
-                language_obj = api._get_objects_("Language", {"code": language})[0]
-                text_obj = api._get_objects_("TextString", {"str_id": button_obj.label_id, "lang_id": language_obj.id})[0]
-                button_callback_data = "_".join((text_obj.text, str(button_obj.id), str(user_id)))
-                rv.append(types.InlineKeyboardButton(text=text_obj.text, callback_data=button_callback_data))
-
-    init_rv()
-    get_language_codes()
-    get_button_obj()
-    populate_rv()
-
-    return rv
-
-# Receive keyboard object itself
-def get_keyboard(user_id, keyboard_id, **args):
-
-    '''def get_object():
-        global keyboard_object
-        keyboard_object = api._get_objects_("Keyboard", {"id": keyboard_id})[0]'''
-
-    '''def get_language_code():
-        global language_code
-        if args.get("language_code") is not None: language_code = args.get("language_code")
-        else:
-            tel_user = api._get_objects_ ("TelUser", {"tel_id": user_id})[0]
-            language_code = api._get_objects_("Customer", {"id": tel_user.core_db_id})[0].language_code'''
-
-    '''def get_coordinates():
-        global x, y
-        x = keyboard_object.layout_x
-        y = keyboard_object.layout_y'''
-
-    def get_buttons_list():
-        global keyboard_buttons
-        keyboard_buttons = keyboard_object.buttons.split(";")[:-1]
-        if language_code == "all-vertical":
-            original_list = keyboard_buttons.copy()
-            for i in range(len(keyboard_buttons)):
-                keyboard_buttons.extend(original_list)
-    
-    def build_layout():
-        global keyboard_layout
-        keyboard_layout = list()
-
-        for i in range(y):
-            keyboard_layout.append(list())
-            for j in range(x):
-                if len(keyboard_buttons) > 0:
-                    if keyboard_buttons[0] and keyboard_buttons[0] != "None":
-                        for return_button in get_buttons(user_id, keyboard_buttons[0],  language_code, i):
-                            keyboard_layout[i].append(return_button)
-                    del keyboard_buttons[0]
-
-    def build_keyboard(): 
-        global keyboard
-        keyboard = types.InlineKeyboardMarkup(keyboard_layout)
-
-    def get_text():
-        global keyboard_text
-        if language_code.startswith("all"):
-            keyboard_text = ""
-            language_objs = api._get_objects_("Language", {})
-            for language_obj in language_objs:
-                keyboard_text += api._get_objects_("TextString", {"str_id": keyboard_object.label_id, "lang_id": language_obj.id})[0].text + "\n"*2
-        else: 
-            language_obj = api._get_objects_("Language", {"code": language_code})[0]
-            keyboard_text = api._get_objects_("TextString", {"str_id": keyboard_object.label_id, "lang_id": language_obj.id})[0].text
+def note():
 
     def check_flush():
         
@@ -346,20 +312,11 @@ def get_keyboard(user_id, keyboard_id, **args):
         if not override_original:
             keyboard = original_keyboard
             keyboard_text = original_keyboard_text
-
-    #get_object()
-    #get_language_code()
-    get_coordinates()
-    get_buttons_list()
-    build_layout()
-    build_keyboard()
-    get_text()
+ 
     check_flush()
     call_on_init(user_id)
 
     return {"text": keyboard_text, "keyboard": keyboard.to_json()}
-
-# // KEYBOARD PROCESSING END
 
 # // USER MESSAGE HISTORY PROCESSING START
 
