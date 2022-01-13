@@ -104,3 +104,4 @@ class Keyboard(models.Model):
     on_init_action = models.TextField(max_length=5096, blank=True)
     flush_chat = models.BooleanField(default=True)
     label_id = models.IntegerField(default=1)
+    dynamic_autoresize = models.IntegerField(default=0) # 0 - False, 1 - horizontally, 2 - vertically, 3 - evenly # TODO add to the db

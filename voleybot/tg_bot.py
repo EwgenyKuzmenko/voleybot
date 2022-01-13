@@ -27,7 +27,7 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
     message = telebot.Message object \n
     user_flag = either telebot.from_user.id or "all" for all users \n
     string = either string id in the db as int or "{str_id in the db}all" for all languages \n
-    keyboard_data = (keyboard_id, all_mode= "vertical" | "horizontal" | False (bool), list_of_buttons_ids) \n
+    keyboard_data = (keyboard_id, all_mode= "vertical" | "horizontal" | False (bool)) \n
     button_data = (button_id, var1-db_obj_id, var2-override_str) # TODO realign according to indexing change
     '''
 
@@ -49,6 +49,9 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
     rv["string_text"] = []
     rv["tel_button_objs"] = []
     rv["tel_keyboard_objs"] = []
+
+    if button_data is not None and type(button_data) != list and type(button_data) != tuple:
+        button_data = [button_data,]
 
     # tel_user_ids, tel_user_first_names, tel_user_last_names
     if message is not None:
@@ -108,7 +111,18 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
 
             sub_rv = list()
 
-            for i in range(keyboard_obj.layout_x):
+            while (keyboard_obj.layout_x * keyboard_obj.layout_y) < (len(copy_of_buttons) + len(button_data)):
+                if keyboard_obj.dynamic_autoresize == 0:
+                    raise OverflowError
+                elif keyboard_obj.dynamic_autoresize == 1:
+                    keyboard_obj.layout_x += 1 # TODO check if it saves
+                elif keyboard_obj.dynamic_autoresize == 2:
+                    keyboard_obj.layout_y += 1
+                elif keyboard_obj.dynamic_autoresize == 3:
+                    keyboard_obj.layout_x += 1
+                    keyboard_obj.layout_y += 1
+
+            for i in range(keyboard_obj.layout_y):
                 sub_rv.append(list())
                 for j in range(keyboard_obj.layout_x):
                     if len(copy_of_buttons) > 0:
@@ -121,8 +135,6 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
         
     # button_ids, button_data
     if button_data is not None:
-        if type(button_data) != list or type(button_data) != tuple:
-            button_data = [button_data,]
         for button_data_ in button_data: 
             rv["button_ids"].append(button_data_[0])
             rv["button_datas"].append(button_data_)
@@ -157,19 +169,24 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
                             rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": keyboard.label_id}))
                     else:
                         rv["string_objs"].append(None)
-    for i, button_obj in enumerate(rv["button_objs"]):
-        if rv["button_datas"][i] is not str: # TODO finish this
-            pass
-        else:
-            pass
     
     # string_text
-    if string is not None:
-        for string_ in rv["string_objs"]:
-            if string_ is not None:
-                rv["string_text"].append(string_.text)
-            else:
-                rv["string_text"].append(None)
+    for string_ in rv["string_objs"]:
+        if string_ is not None:
+            rv["string_text"].append(string_.text)
+        else:
+            rv["string_text"].append(None)
+    for i, button_obj in enumerate(rv["button_objs"]):
+        if rv["button_datas"][i][2] is not str:
+            for customer in rv["customer_objs"]:
+                if customer is not None:
+                    language_id = api._get_objects_("Language", {"code": customer.language_code})[0]
+                    rv["string_objs"].extend(api._get_objects_("TextString", {"str_id": button_obj.label_id, "lang_id": language_id}))        
+                else:
+                    rv["string_objs"].append(None)
+        else:
+            # TODO if adopted, different languages for items' names / desctiptions go here (look above for keyboard_data[1])
+            rv["string_objs"].append(rv["button_datas"][i][2])
 
     # tel_button_objs
         for i, button_obj in enumerate(rv["button_objs"]):
@@ -178,9 +195,17 @@ def get_meta(message=None, user_flag=None, string=None, keyboard_data=None, butt
 
     # tel_keyboard_objs
         for i, keyboard_obj in enumerate(rv["keyboard_objs"]):
-            if keyboard_obj is not None: # TODO finish this, Also, how to auto resize?
-                for 
-                rv["tel_keyboard_objs"].append(types.InlineKeyboardMarkup())
+            if keyboard_obj is not None:
+                for keyboard_layout in rv["keyboard_layout"]:
+                    if keyboard_layout is not None:
+                        for i, y_coordinate in enumerate(keyboard_layout):
+                            for j, x_coordinate in enumerate(keyboard_layout):
+                                if type(x_coordinate) is int:
+                                    y_coordinate[i][j] = rv["tel_button_objs"][(i*len(keyboard_layout)+j)]
+                                else:
+                                    raise TypeError
+
+                        rv["tel_keyboard_objs"].append(types.InlineKeyboardMarkup(keyboard_layout))
 
     return rv
 
@@ -200,7 +225,7 @@ def start_hander(meta):
             api._make_object_("TelUser", {"tel_id": meta.from_user.id, "core_db_id": core_user_obj[0].id}, with_return=False)
             metadata = get_meta(meta)
 
-            show_keyboard(metadata["tel_user_ids"][0], 1, language_code="all-vertical")
+            show_keyboard(metadata["tel_user_ids"][0], 1, all_mode="vertical")
 
         elif len(meta['tel_user_objs']) == 1:          
             show_keyboard(metadata["tel_user_ids"][0], 2)
@@ -217,7 +242,9 @@ def button_press(callback_data): # TODO check out after the reformation
     voleybot_.answer_callback_query(callback_data.id) 
 
     metadata = get_meta(button_data=callback_data.data.split("_"))
-    for i in range(len(metadata["button_objs"])): exec(metadata["button_objs"][i].on_press_action) # TODO switch tg database
+    for i in range(len(metadata["button_objs"])): 
+        if metadata["button_objs"][i] is not None:
+            exec(metadata["button_objs"][i].on_press_action) # TODO switch tg database
 
 # Image processing (adding items to the cart by QR Code and ignoring other images)
 @voleybot_.message_handler(func=lambda message:True, content_types=["photo"])
@@ -262,10 +289,31 @@ def user_handler(message):
 # // OUTPUT PROCESSING START
 
 # Output keyboard to the user
-def show_keyboard(user_id, keyboard_id, **kwargs):
-    message = get_keyboard(user_id, keyboard_id, **kwargs)
-    message_obj = voleybot_.send_message(user_id, message["text"], reply_markup=message["keyboard"])
-    add_message_to_history(user_id, message_obj.message_id)
+def show_keyboard(user_id, keyboard_id, all_mode=False, button_data=None): # TODO fix all references to this function
+
+    def check_flush():
+        
+        if metadata["keyboard_objs"][i] is not None and metadata["keyboard_objs"][i].flush_chat:            
+            clear_messages(user_id)
+
+    def call_on_init(user_id):
+
+        override_original = False
+
+        original_keyboard_text = metadata["string_text"][0]
+        original_keyboard = metadata["tel_keyboard_objs"][i]
+        exec(metadata["keyboard_objs"][i].on_init_action)
+        
+        if not override_original:
+            metadata["tel_keyboard_objs"][i] = original_keyboard
+            metadata["string_text"][0] = original_keyboard_text
+
+    metadata = get_meta(user_flag=user_id, keyboard_data=(keyboard_id, all_mode), button_data=button_data)
+    for i, bot_keyboard_obj in enumerate(metadata["tel_keyboard_objs"]):
+        check_flush()
+        call_on_init(user_id)
+        message_obj = voleybot_.send_message(user_id, metadata["string_text"][0], reply_markup=bot_keyboard_obj)
+        add_message_to_history(user_id, message_obj.message_id)
 
 def return_to_main_page():
 
@@ -281,42 +329,17 @@ def return_to_main_page():
         except:
             pass
 
-def edit_user_language(language_text, user_id):
+def edit_user_language(language_id, user_id): # TODO check references and correctness of the function
     
-    string_obj = api._get_objects_("TextString", {"text": language_text})[0]
-    language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
-    api.edit_user_language(user_id, language_obj.code)
+    #string_obj = api._get_objects_("TextString", {"text": language_text})[0]
+    #language_obj = api._get_objects_("Language", {"id": string_obj.lang_id})[0]
+    
+    metadata = get_meta(user_flag=user_id, string=0)
+
+    api.edit_user_language(user_id, language_id)
     show_keyboard(user_id, 2)
 
 # // OUTPUT PROCESSING END
-
-# Receive button objects of the keyboard
-
-def note():
-
-    def check_flush():
-        
-        if keyboard_object.flush_chat:            
-            clear_messages(user_id)
-
-    def call_on_init(user_id):
-
-        global keyboard, keyboard_text, override_original
-
-        override_original = False
-
-        original_keyboard_text = keyboard_text
-        original_keyboard = keyboard
-        exec(keyboard_object.on_init_action)
-        
-        if not override_original:
-            keyboard = original_keyboard
-            keyboard_text = original_keyboard_text
- 
-    check_flush()
-    call_on_init(user_id)
-
-    return {"text": keyboard_text, "keyboard": keyboard.to_json()}
 
 # // USER MESSAGE HISTORY PROCESSING START
 
